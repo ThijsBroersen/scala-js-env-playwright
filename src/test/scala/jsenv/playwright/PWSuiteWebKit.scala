@@ -1,4 +1,4 @@
-// package jsenv.playwright
+// package io.github.thijsbroersen.jsenv.playwright
 
 // import org.junit.runner.RunWith
 // import org.scalajs.jsenv.test._

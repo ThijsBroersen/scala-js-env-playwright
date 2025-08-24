@@ -1,4 +1,4 @@
-package jsenv.playwright
+package io.github.thijsbroersen.jsenv.playwright
 
 import com.google.common.jimfs.Jimfs
 import org.junit.Test
@@ -6,53 +6,49 @@ import org.scalajs.jsenv._
 import org.scalajs.jsenv.test.kit.Run
 import org.scalajs.jsenv.test.kit.TestKit
 
+import scala.concurrent.duration.DurationInt
+
 import java.io.File
 import java.nio.charset.StandardCharsets
 import java.nio.file.Files
-import scala.concurrent.duration.DurationInt
 
 class RunTests {
   val withCom = true
   private val kit = new TestKit(new PWEnv("chrome", debug = true), 100.second)
 
-  private def withRun(input: Seq[Input])(body: Run => Unit): Unit = {
+  private def withRun(input: Seq[Input])(body: Run => Unit): Unit =
     if (withCom) kit.withComRun(input)(body)
     else kit.withRun(input)(body)
-  }
 
   private def withRun(code: String, config: RunConfig = RunConfig())(
       body: Run => Unit
-  ): Unit = {
+  ): Unit =
     if (withCom) kit.withComRun(code, config)(body)
     else kit.withRun(code, config)(body)
-  }
 
   @Test
-  def failureTest(): Unit = {
+  def failureTest(): Unit =
     withRun("""
       var a = {};
       a.foo();
     """) {
       _.fails()
     }
-  }
 
   @Test
-  def syntaxErrorTest(): Unit = {
+  def syntaxErrorTest(): Unit =
     withRun("{") {
       _.fails()
     }
-  }
 
   @Test
-  def throwExceptionTest(): Unit = {
+  def throwExceptionTest(): Unit =
     withRun("throw 1;") {
       _.fails()
     }
-  }
 
   @Test
-  def catchExceptionTest(): Unit = {
+  def catchExceptionTest(): Unit =
     withRun("""
       try {
         throw "hello world";
@@ -62,21 +58,18 @@ class RunTests {
     """) {
       _.expectOut("hello world\n").closeRun()
     }
-  }
 
   @Test // Failed in Phantom - #2053
-  def utf8Test(): Unit = {
+  def utf8Test(): Unit =
     withRun("console.log('\u1234')") {
       _.expectOut("\u1234\n").closeRun()
     }
-  }
 
   @Test
-  def allowScriptTags(): Unit = {
+  def allowScriptTags(): Unit =
     withRun("""console.log("<script></script>");""") {
       _.expectOut("<script></script>\n").closeRun()
     }
-  }
 
   //  @Test
   //  def jsExitsTest: Unit = {
@@ -101,17 +94,16 @@ class RunTests {
   }
 
   @Test
-  def fastCloseTest(): Unit = {
+  def fastCloseTest(): Unit =
     /* This test also tests a failure mode where the ExternalJSRun is still
      * piping output while the client calls close.
      */
     withRun("") {
       _.closeRun()
     }
-  }
 
   @Test
-  def multiCloseAfterTerminatedTest(): Unit = {
+  def multiCloseAfterTerminatedTest(): Unit =
     withRun("") { run =>
       run.closeRun()
 
@@ -120,7 +112,6 @@ class RunTests {
       run.closeRun()
       run.closeRun()
     }
-  }
 
   @Test
   def noThrowOnBadFileTest(): Unit = {
@@ -149,6 +140,7 @@ class RunTests {
       }
     } finally {
       tmpFile.delete()
+      ()
     }
   }
 

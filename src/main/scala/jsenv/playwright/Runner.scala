@@ -1,19 +1,22 @@
-package jsenv.playwright
+package io.github.thijsbroersen.jsenv.playwright
 
-import cats.effect.IO
-import cats.effect.Resource
+import io.github.thijsbroersen.jsenv.playwright.PWEnv.Config
+import io.github.thijsbroersen.jsenv.playwright.PageFactory._
+import io.github.thijsbroersen.jsenv.playwright.ResourcesFactory._
+
 import com.microsoft.playwright.BrowserType
 import com.microsoft.playwright.BrowserType.LaunchOptions
-import jsenv.playwright.PWEnv.Config
-import jsenv.playwright.PageFactory._
-import jsenv.playwright.ResourcesFactory._
 import org.scalajs.jsenv.Input
 import org.scalajs.jsenv.RunConfig
 
-import java.util.concurrent.ConcurrentLinkedQueue
-import java.util.concurrent.atomic.AtomicBoolean
+import cats.effect.IO
+import cats.effect.Resource
+
 import scala.concurrent.duration.DurationInt
-import scala.jdk.CollectionConverters.seqAsJavaListConverter
+import scala.jdk.CollectionConverters._
+
+import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.ConcurrentLinkedQueue
 
 trait Runner {
   val browserName: String = "" // or provide actual values
@@ -30,7 +33,8 @@ trait Runner {
   protected val sendQueue = new ConcurrentLinkedQueue[String]
   // receivedMessage is called only from JSComRun. Hence its implementation is empty in CERun
   protected def receivedMessage(msg: String): Unit
-  var wantToClose = new AtomicBoolean(false)
+  private val isClosed = new AtomicBoolean(false)
+  private val wantToClose = new AtomicBoolean(false)
   // List of programs
   // 1. isInterfaceUp()
   // Create PW resource if not created. Create browser,context and page
@@ -38,7 +42,7 @@ trait Runner {
   // 3. wantClose
   // 4. sendAll()
   // 5. fetchAndProcess()
-  // 6. Close diver
+  // 6. Close driver
   // 7. Close streams
   // 8. Close materializer
   // Flow
@@ -53,6 +57,10 @@ trait Runner {
       isComEnabled: Boolean,
       launchOptions: LaunchOptions
   ): Resource[IO, Unit] = for {
+    _ <- Resource.make(IO.unit)(_ =>
+      IO {
+        isClosed.set(true)
+      })
     _ <- Resource.pure(
       scribe.info(
         s"Begin Main with isComEnabled $isComEnabled " +
@@ -73,13 +81,11 @@ trait Runner {
     )
     connectionReady <- isConnectionUp(pageInstance, intf)
     _ <-
-      if (!connectionReady) Resource.pure[IO, Unit] {
-        IO.sleep(100.milliseconds)
-      }
-      else Resource.pure[IO, Unit](IO.unit)
+      if (!connectionReady) Resource.sleep[IO](100.milliseconds)
+      else Resource.unit[IO]
     _ <-
       if (!connectionReady) isConnectionUp(pageInstance, intf)
-      else Resource.pure[IO, Unit](IO.unit)
+      else Resource.unit[IO]
     out <- outputStream(runConfig)
     _ <- processUntilStop(
       wantToClose,
@@ -97,16 +103,21 @@ trait Runner {
    * This <strong>must</strong> be called to ensure the run's resources are released.
    *
    * Whether or not this makes the run fail or not is up to the implementation. However, in the
-   * following cases, calling [[close]] may not fail the run: <ul> <li>[[Future]] is already
-   * completed when [[close]] is called. <li>This is a [[CERun]] and the event loop inside the
-   * VM is empty. </ul>
+   * following cases, calling [[close]] may not fail the run: <ul> <li>[[scala.concurrent.Future
+   * Future]] is already completed when [[close]] is called. <li>This is a [[CERun]] and the
+   * event loop inside the VM is empty. </ul>
    *
    * Idempotent, async, nothrow.
    */
 
   def close(): Unit = {
+    scribe.debug(s"Received stopSignal")
+    val now = System.currentTimeMillis()
+    val deadline = now + 5000
     wantToClose.set(true)
-    scribe.debug(s"Received stopSignal ${wantToClose.get()}")
+    while (!isClosed.get() && System.currentTimeMillis() < deadline)
+      Thread.sleep(10)
+    scribe.debug(s"jsRunPrg is closed")
   }
 
   def getCaller: String = {
@@ -114,18 +125,16 @@ trait Runner {
     if (stackTraceElements.length > 5) {
       val callerElement = stackTraceElements(5)
       s"Caller class: ${callerElement.getClassName}, method: ${callerElement.getMethodName}"
-    } else {
+    } else
       "Could not determine caller."
-    }
   }
 
-  def logStackTrace(): Unit = {
-    try {
+  def logStackTrace(): Unit =
+    try
       throw new Exception("Logging stack trace")
-    } catch {
+    catch {
       case e: Exception => e.printStackTrace()
     }
-  }
 
   protected lazy val pwLaunchOptions =
     browserName.toLowerCase() match {
@@ -136,11 +145,20 @@ trait Runner {
           else (launchOptions ++ additionalLaunchOptions).asJava
         )
       case "firefox" =>
-        new BrowserType.LaunchOptions().setArgs(
-          if (launchOptions.isEmpty)
-            (PWEnv.firefoxLaunchOptions ++ additionalLaunchOptions).asJava
-          else (launchOptions ++ additionalLaunchOptions).asJava
-        )
+        import scala.jdk.CollectionConverters._
+        new BrowserType.LaunchOptions()
+          .setFirefoxUserPrefs(
+            PWEnv
+              .firefoxUserPrefs
+              .view
+              .mapValues(_.asInstanceOf[java.lang.Object])
+              .toMap
+              .asJava)
+          .setArgs(
+            if (launchOptions.isEmpty)
+              (PWEnv.firefoxLaunchOptions ++ additionalLaunchOptions).asJava
+            else (launchOptions ++ additionalLaunchOptions).asJava
+          )
       case "webkit" =>
         new BrowserType.LaunchOptions().setArgs(
           if (launchOptions.isEmpty)

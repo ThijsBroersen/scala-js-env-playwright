@@ -1,11 +1,16 @@
-[![Scala CI](https://github.com/gmkumar2005/scala-js-env-playwright/actions/workflows/scala.yml/badge.svg)](https://github.com/gmkumar2005/scala-js-env-playwright/actions/workflows/scala.yml)
+[![Scala CI](https://github.com/thijsbroersen/scala-js-env-playwright/actions/workflows/ci.yml/badge.svg)](https://github.com/thijsbroersen/scala-js-env-playwright/actions/workflows/ci.yml)
 # scala-js-env-playwright
 A JavaScript environment for Scala.js (a JSEnv) running playwright
+## Requirements
+Playwright needs certain system dependencies [read the docs](https://playwright.dev/docs/browsers#install-system-dependencies)
+
+TLDR -> `npx playwright install-deps`
+
 ## Usage
 Add the following line to your `project/plugins.sbt` 
 ```scala
 // For Scala.js 1.x
-libraryDependencies += "io.github.gmkumar2005" %% "scala-js-env-playwright" % "0.1.11"
+libraryDependencies += "io.github.thijsbroersen" %% "scala-js-env-playwright" % "0.1.21"
 ```
 Add the following line to your `build.sbt` 
 ```scala
@@ -34,18 +39,18 @@ libraryDependencies += "com.google.guava" % "guava" % "33.0.0-jre"
 * chrome
 * chromium (same as chrome)
 * firefox
-* webkit (experimental) - Works will on macOS. Mileage may vary on other platforms.
+* webkit (experimental) - Works well on macOS. Mileage may vary on other platforms.
 
 ## Compatibility notes
 ### Scala versions
-* This library can be used with any scala version 2.x and 3.x
-* This project is compiled with scala 2.12.20
+* This library can be used with any scala version 3.x
+* This project is compiled with scala 3.7.2
 ### sbt versions
 * This library can be used with any sbt version 1.x 
 ### Playwright versions
-* This library can be used with playwright version 1.49.0 `"com.microsoft.playwright" % "playwright" % "1.49.0"`
+* This library can be used with playwright version 1.54.0 `"com.microsoft.playwright" % "playwright" % "1.54.0"`
 ### JDK versions
-* This library is tested on JDK21 
+* This library is tested on JDK17
 
 ## Default configuration
 ```scala
@@ -120,5 +125,5 @@ Test / jsEnv := new PWEnv(
 Watch this space for more details on how to use this library.
 
 ## References
-* Sample project using this JSEnv: https://github.com/gmkumar2005/scalajs-sbt-vite-laminar-chartjs-example
-* Fork of Laminar: https://github.com/gmkumar2005/Laminar
+* Sample project using this JSEnv: https://github.com/thijsbroersen/scalajs-sbt-vite-laminar-chartjs-example
+* Fork of Laminar: https://github.com/thijsbroersen/Laminar

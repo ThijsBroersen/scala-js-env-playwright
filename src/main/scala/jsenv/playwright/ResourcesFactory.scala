@@ -1,18 +1,21 @@
-package jsenv.playwright
+package io.github.thijsbroersen.jsenv.playwright
 
-import cats.effect.IO
-import cats.effect.Resource
+import io.github.thijsbroersen.jsenv.playwright.PWEnv.Config
+
 import com.microsoft.playwright.Page
-import jsenv.playwright.PWEnv.Config
 import org.scalajs.jsenv.Input
 import org.scalajs.jsenv.RunConfig
 
-import java.util
-import java.util.concurrent.ConcurrentLinkedQueue
-import java.util.concurrent.atomic.AtomicBoolean
-import java.util.function.Consumer
+import cats.effect.IO
+import cats.effect.Resource
+
 import scala.annotation.tailrec
 import scala.concurrent.duration.DurationInt
+
+import java.util
+import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.ConcurrentLinkedQueue
+import java.util.function.Consumer
 
 object ResourcesFactory {
   def preparePageForJsRun(
@@ -56,23 +59,23 @@ object ResourcesFactory {
       sendQueue: ConcurrentLinkedQueue[String],
       outStream: OutputStreams.Streams,
       receivedMessage: String => Unit
-  ): Resource[IO, Unit] = {
-    Resource.pure[IO, Unit] {
-      scribe.debug(s"Started processUntilStop")
-      while (!stopSignal.get()) {
-        sendAll(sendQueue, pageInstance, intf)
-        val jsResponse = fetchMessages(pageInstance, intf)
-        streamWriter(jsResponse, outStream, Some(receivedMessage))
-        IO.sleep(100.milliseconds)
-      }
-      scribe.debug(s"Stop processUntilStop")
+  ): Resource[IO, Unit] =
+    Resource.eval {
+      for
+        _ <- IO(scribe.debug(s"Started processUntilStop"))
+        _ <- IO {
+          sendAll(sendQueue, pageInstance, intf)
+          val jsResponse = fetchMessages(pageInstance, intf)
+          streamWriter(jsResponse, outStream, Some(receivedMessage))
+        }.andWait(100.milliseconds).iterateUntil(_ => stopSignal.get())
+        _ <- IO(scribe.debug(s"Stop processUntilStop"))
+      yield ()
     }
-  }
 
   def isConnectionUp(
       pageInstance: Page,
       intf: String
-  ): Resource[IO, Boolean] = {
+  ): Resource[IO, Boolean] =
     Resource.pure[IO, Boolean] {
       val status = pageInstance.evaluate(s"!!$intf;").asInstanceOf[Boolean]
       scribe.debug(
@@ -81,8 +84,6 @@ object ResourcesFactory {
       status
     }
 
-  }
-
   def materializer(pwConfig: Config): Resource[IO, FileMaterializer] =
     Resource.make {
       IO.blocking(FileMaterializer(pwConfig.materialization)) // build
@@ -90,10 +91,10 @@ object ResourcesFactory {
       IO {
         scribe.debug("Closing the fileMaterializer")
         fileMaterializer.close()
-      }.handleErrorWith(_ => {
+      }.handleErrorWith { _ =>
         scribe.error("Error in closing the fileMaterializer")
         IO.unit
-      }) // release
+      } // release
     }
 
   /*
@@ -108,16 +109,16 @@ object ResourcesFactory {
       IO {
         scribe.debug(s"Closing the stream ${outStream.hashCode()}")
         outStream.close()
-      }.handleErrorWith(_ => {
+      }.handleErrorWith { _ =>
         scribe.error(s"Error in closing the stream ${outStream.hashCode()})")
         IO.unit
-      }) // release
+      } // release
     }
 
   private def streamWriter(
       jsResponse: util.Map[String, util.List[String]],
       outStream: OutputStreams.Streams,
-      onMessage: Option[String => Unit] = None
+      onMessage: Option[String => Unit]
   ): Unit = {
     val data = jsResponse.get("consoleLog")
     val consoleError = jsResponse.get("consoleError")
@@ -128,9 +129,9 @@ object ResourcesFactory {
         msgs.forEach(consumer(f))
       case None => scribe.debug("No onMessage function")
     }
-    data.forEach(outStream.out.println _)
-    error.forEach(outStream.out.println _)
-    consoleError.forEach(outStream.out.println _)
+    data.forEach(outStream.out.println)
+    error.forEach(outStream.out.println)
+    consoleError.forEach(outStream.out.println)
 
     if (!error.isEmpty) {
       val errList = error.toArray(Array[String]()).toList
@@ -151,18 +152,10 @@ object ResourcesFactory {
       val wrapper = s"function(arg) { $script }"
       pageInstance.evaluate(s"$wrapper", msg)
       val pwDebug = sys.env.getOrElse("PWDEBUG", "0")
-      if (pwDebug == "1") {
+      if (pwDebug == "1")
         pageInstance.pause()
-      }
       sendAll(sendQueue, pageInstance, intf)
     }
   }
   private def consumer[A](f: A => Unit): Consumer[A] = (v: A) => f(v)
-  private def logStackTrace(): Unit = {
-    try {
-      throw new Exception("Logging stack trace")
-    } catch {
-      case e: Exception => e.printStackTrace()
-    }
-  }
 }

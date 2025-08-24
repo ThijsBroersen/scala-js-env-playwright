@@ -1,4 +1,4 @@
-package jsenv.playwright
+package io.github.thijsbroersen.jsenv.playwright
 
 import java.net._
 import java.nio.file._
@@ -17,6 +17,7 @@ abstract class FileMaterializer extends AutoCloseable {
     if (Files.exists(mapPath)) {
       val tmpMap = newTmp(mapPath.toString)
       Files.copy(mapPath, tmpMap, StandardCopyOption.REPLACE_EXISTING)
+      ()
     }
     toURL(tmp)
   }
@@ -58,14 +59,13 @@ object FileMaterializer {
  * materializes virtual files in a temp directory (uses file:// schema).
  */
 private class TempDirFileMaterializer extends FileMaterializer {
-  override def materialize(path: Path): URL = {
-    try {
+  override def materialize(path: Path): URL =
+    try
       path.toFile.toURI.toURL
-    } catch {
+    catch {
       case _: UnsupportedOperationException =>
         super.materialize(path)
     }
-  }
 
   protected def createTmp(suffix: String): Path =
     Files.createTempFile(null, suffix)

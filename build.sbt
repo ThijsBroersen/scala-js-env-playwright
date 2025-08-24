@@ -1,49 +1,57 @@
 import sbtrelease.ReleasePlugin.autoImport.ReleaseTransformations.*
-import sbtrelease.ReleaseStateTransformations.{checkSnapshotDependencies, inquireVersions, runClean}
+import sbtrelease.ReleaseStateTransformations.{
+  checkSnapshotDependencies,
+  inquireVersions,
+  runClean
+}
 import xerial.sbt.Sonatype.*
 
 ThisBuild / sonatypeCredentialHost := sonatypeCentralHost
-organization := "io.github.gmkumar2005"
-organizationName := "io.github.gmkumar2005"
-scalaVersion := "2.12.20"
-sonatypeProfileName := "io.github.gmkumar2005"
-versionScheme := Some("early-semver")
-licenses := Seq(
-  "APL2" -> url("http://www.apache.org/licenses/LICENSE-2.0.txt")
+ThisBuild / organization := "io.github.thijsbroersen"
+ThisBuild / organizationName := "ThijsBroersen"
+ThisBuild / scalaVersion := "3.7.2"
+ThisBuild / sonatypeProfileName := "io.github.thijsbroersen"
+ThisBuild / versionScheme := Some("early-semver")
+ThisBuild / licenses := Seq(
+  "BSD-3-Clause" -> url("https://opensource.org/licenses/BSD-3-Clause")
 )
-sonatypeProjectHosting := Some(
-  GitHubHosting("gmkumar2005", "scala-js-env-playwright", "info@akkagrpc.com")
+ThisBuild / sonatypeProjectHosting := Some(
+  GitHubHosting("thijsbroersen", "scala-js-env-playwright", "thijsbroersen@gmail.com")
 )
-homepage := Some(url("https://www.akkagrpc.com"))
-organizationHomepage := Some(url("https://www.akkagrpc.com"))
-scmInfo := Some(
+ThisBuild / scmInfo := Some(
   ScmInfo(
-    url("https://github.com/gmkumar2005/scala-js-env-playwright"),
-    "scm:git@github.com:gmkumar2005/scala-js-env-playwright.git"
+    url("https://github.com/thijsbroersen/scala-js-env-playwright"),
+    "scm:git@github.com:thijsbroersen/scala-js-env-playwright.git"
   )
 )
-developers := List(
+ThisBuild / developers := List(
   Developer(
     id = "gmkumar2005",
     name = "Kiran Kumar",
     email = "info@akkagrpc.com",
     url = url("https://www.akkagrpc.com")
+  ),
+  Developer(
+    id = "thijsbroersen",
+    name = "Thijs Broersen",
+    email = "thijsbroersen@gmail.com",
+    url = url("https://thijsbroersen.nl")
   )
 )
-
-//publishTo := Some(Resolver.file("file",  new File(Path.userHome.absolutePath+"/.m2/repository")))
-//publishTo := Some(Resolver.file("local-ivy-repo", file(Path.userHome.absolutePath + "/.ivy2/local"))(Patterns(true, Resolver.mavenStyleBasePattern)))
-//val localIvyRepo = Resolver.file("local-ivy-repo", file(Path.userHome.absolutePath + "/.ivy2/local"))(Patterns(true, Resolver.mavenStyleBasePattern))
+ThisBuild / tlCiHeaderCheck := false
+ThisBuild / tlCiMimaBinaryIssueCheck := false
+ThisBuild / githubWorkflowJavaVersions := Seq(JavaSpec.temurin("17"))
 
 lazy val root = (project in file(".")).settings(
   name := "scala-js-env-playwright",
   libraryDependencies ++= Seq(
-    "com.microsoft.playwright" % "playwright" % "1.49.0",
-    "org.scala-js" %% "scalajs-js-envs" % "1.4.0",
-    "com.google.jimfs" % "jimfs" % "1.3.0",
-    "com.outr" %% "scribe" % "3.15.2",
-    "org.typelevel" %% "cats-effect" % "3.5.7",
-    "org.scala-js" %% "scalajs-js-envs-test-kit" % "1.4.0" % Test,
+    "com.microsoft.playwright" % "playwright" % "1.54.0",
+    ("org.scala-js" %% "scalajs-js-envs" % "1.4.0").cross(CrossVersion.for3Use2_13),
+    ("org.scala-js" %% "scalajs-js-envs-test-kit" % "1.4.0" % Test)
+      .cross(CrossVersion.for3Use2_13),
+    "com.google.jimfs" % "jimfs" % "1.3.1",
+    "com.outr" %% "scribe" % "3.17.0",
+    "org.typelevel" %% "cats-effect" % "3.6.3",
     "com.novocode" % "junit-interface" % "0.11" % Test
   ),
   javacOptions += "-nowarn",
@@ -61,23 +69,6 @@ lazy val root = (project in file(".")).settings(
     commitNextVersion
   ),
   publishMavenStyle := true,
-  publishTo := sonatypePublishToBundle.value,
-  // publishTo := {
-  //   val nexus = "https://s01.oss.sonatype.org/"
-  //   if (isSnapshot.value)
-  //     Some("snapshots" at nexus + "content/repositories/snapshots")
-  //   else
-  //     Some("releases" at nexus + "service/local/staging/deploy/maven2")
-  // },
-//  credentials += Credentials(
-//    "Sonatype Nexus Repository Manager",
-//    "s01.oss.sonatype.org",
-//    sys.env("SONATYPE_USERNAME"),
-//    sys.env("SONATYPE_PASSWORD")),
-
-  // For all Sonatype accounts created on or after February 2021
-  // sonatypeCredentialHost := "s01.oss.sonatype.org",
   Test / parallelExecution := true,
-  Test / publishArtifact := false,
-  usePgpKeyHex("F7E440260BAE93EB4AD2723D6613CA76E011F638")
+  Test / publishArtifact := false
 )

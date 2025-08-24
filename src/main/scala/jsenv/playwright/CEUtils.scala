@@ -1,8 +1,7 @@
-package jsenv.playwright
+package io.github.thijsbroersen.jsenv.playwright
 
 import org.scalajs.jsenv.Input
 import org.scalajs.jsenv.UnsupportedInputException
-import scribe.format.FormatterInterpolator
 import scribe.format.classNameSimple
 import scribe.format.dateFull
 import scribe.format.level
@@ -10,6 +9,7 @@ import scribe.format.mdc
 import scribe.format.messages
 import scribe.format.methodName
 import scribe.format.threadName
+import scribe.format.FormatterInterpolator
 
 import java.nio.file.Path
 
@@ -58,12 +58,13 @@ object CEUtils {
     // default log level is error
     scribe.Logger.root.withMinimumLevel(scribe.Level.Error).replace()
 
-    if (showLogs) {
+    if (showLogs)
       scribe.Logger.root.withMinimumLevel(scribe.Level.Info).replace()
-    }
-    if (debug) {
+      ()
+    if (debug)
       scribe.Logger.root.withMinimumLevel(scribe.Level.Trace).replace()
-    }
+      ()
+    ()
   }
 
 }

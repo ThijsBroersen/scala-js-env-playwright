@@ -1,21 +1,24 @@
-package jsenv.playwright
+package io.github.thijsbroersen.jsenv.playwright
 
-import cats.effect.IO
-import cats.effect.Resource
 import com.microsoft.playwright.Browser
 import com.microsoft.playwright.BrowserType
 import com.microsoft.playwright.BrowserType.LaunchOptions
 import com.microsoft.playwright.Page
 import com.microsoft.playwright.Playwright
 
+import cats.effect.IO
+import cats.effect.Resource
+
 object PageFactory {
-  def pageBuilder(browser: Browser): Resource[IO, Page] = {
+  def pageBuilder(browser: Browser): Resource[IO, Page] =
     Resource.make(IO {
       val pg = browser.newContext().newPage()
       scribe.debug(s"Creating page ${pg.hashCode()} ")
       pg
-    })(page => IO { page.close() })
-  }
+    })(page =>
+      IO {
+        page.close()
+      })
 
   private def browserBuilder(
       playwright: Playwright,

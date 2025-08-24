@@ -1,11 +1,13 @@
-package jsenv.playwright
+package io.github.thijsbroersen.jsenv.playwright
 
-import cats.effect.IO
-import cats.effect.unsafe.implicits.global
-import jsenv.playwright.PWEnv.Config
+import io.github.thijsbroersen.jsenv.playwright.PWEnv.Config
+
 import org.scalajs.jsenv.Input
 import org.scalajs.jsenv.JSRun
 import org.scalajs.jsenv.RunConfig
+
+import cats.effect.unsafe.implicits.global
+import cats.effect.IO
 
 import scala.concurrent._
 

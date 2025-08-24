@@ -1,4 +1,4 @@
-package jsenv.playwright
+package io.github.thijsbroersen.jsenv.playwright
 
 import com.google.common.jimfs.Jimfs
 
@@ -13,7 +13,7 @@ private object JSSetup {
     Files.write(path, contents)
   }
 
-  private def setupCode(enableCom: Boolean): String = {
+  private def setupCode(enableCom: Boolean): String =
     s"""
        |(function() {
        |  // Buffers for console.log / console.error
@@ -88,6 +88,5 @@ private object JSSetup {
        |  };
        |}).call(this)
     """.stripMargin
-  }
 
 }

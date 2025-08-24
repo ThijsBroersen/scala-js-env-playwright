@@ -1,4 +1,4 @@
-package jsenv.playwright
+package io.github.thijsbroersen.jsenv.playwright
 
 import org.scalajs.jsenv.RunConfig
 
@@ -24,15 +24,13 @@ object OutputStreams {
     new Streams(new PrintStream(out), new PrintStream(err))
   }
 
-  private def optPipe(want: Boolean) = {
+  private def optPipe(want: Boolean) =
     if (want) {
       val i = new PipedInputStream()
       val o = new PipedOutputStream(i)
       Some((i, o))
-    } else {
+    } else
       None
-    }
-  }
 
   private class UnownedOutputStream(out: OutputStream) extends FilterOutputStream(out) {
     override def close(): Unit = flush()

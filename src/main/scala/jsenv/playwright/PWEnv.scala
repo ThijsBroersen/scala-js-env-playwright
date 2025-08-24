@@ -1,13 +1,15 @@
-package jsenv.playwright
+package io.github.thijsbroersen.jsenv.playwright
 
-import jsenv.playwright.PWEnv.Config
+import io.github.thijsbroersen.jsenv.playwright.PWEnv.Config
+
 import org.scalajs.jsenv._
+
+import scala.util.control.NonFatal
 
 import java.net.URI
 import java.net.URL
 import java.nio.file.Path
 import java.nio.file.Paths
-import scala.util.control.NonFatal
 
 /**
  * Playwright JS environment
@@ -33,25 +35,27 @@ class PWEnv(
     showLogs: Boolean = false,
     debug: Boolean = false,
     pwConfig: Config = Config(),
+    runConfigEnv: Map[String, String] = Map.empty,
     launchOptions: List[String] = Nil,
     additionalLaunchOptions: List[String] = Nil
 ) extends JSEnv {
 
-  private lazy val validator = {
-    RunConfig.Validator().supportsInheritIO().supportsOnOutputStream()
-  }
+  private lazy val validator =
+    RunConfig.Validator().supportsInheritIO().supportsOnOutputStream().supportsEnv()
   override val name: String = s"CEEnv with $browserName"
   System.setProperty("playwright.driver.impl", "jsenv.DriverJar")
   CEUtils.setupLogger(showLogs, debug)
 
   override def start(input: Seq[Input], runConfig: RunConfig): JSRun = {
+    println(s"input is : ${input.toList.map(_.toString).mkString("\n")}")
     try {
-      validator.validate(runConfig)
+      val newRunConfig = runConfig.withEnv(runConfig.env ++ runConfigEnv)
+      validator.validate(newRunConfig)
       new CERun(
         browserName,
         headless,
         pwConfig,
-        runConfig,
+        newRunConfig,
         input,
         launchOptions,
         additionalLaunchOptions)
@@ -69,14 +73,15 @@ class PWEnv(
       input: Seq[Input],
       runConfig: RunConfig,
       onMessage: String => Unit
-  ): JSComRun = {
+  ): JSComRun =
     try {
-      validator.validate(runConfig)
+      val newRunConfig = runConfig.withEnv(runConfig.env ++ runConfigEnv)
+      validator.validate(newRunConfig)
       new CEComRun(
         browserName,
         headless,
         pwConfig,
-        runConfig,
+        newRunConfig,
         input,
         launchOptions,
         additionalLaunchOptions,
@@ -90,7 +95,6 @@ class PWEnv(
         scribe.error(s"CEEnv.startWithCom failed with $t")
         JSComRun.failed(t)
     }
-  }
 
 }
 
@@ -162,9 +166,9 @@ object PWEnv {
 
   object Config {
 
-    abstract class Materialization private ()
+    sealed abstract class Materialization private ()
     object Materialization {
-      final case object Temp extends Materialization
+      case object Temp extends Materialization
       final case class Server(contentDir: Path, webRoot: URL) extends Materialization {
         require(
           webRoot.getPath.endsWith("/"),
@@ -183,7 +187,14 @@ object PWEnv {
     "--disable-gpu"
   )
 
-  val firefoxLaunchOptions = List("--disable-web-security")
+  val firefoxLaunchOptions: List[String] = List()
+
+  val firefoxUserPrefs: Map[String, Any] =
+    Map(
+      "security.mixed_content.block_active_content" -> false,
+      "security.mixed_content.upgrade_display_content" -> false,
+      "security.file_uri.strict_origin_policy" -> false
+    )
 
   val webkitLaunchOptions = List(
     "--disable-extensions",
