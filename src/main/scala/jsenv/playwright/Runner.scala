@@ -103,9 +103,9 @@ trait Runner {
    * This <strong>must</strong> be called to ensure the run's resources are released.
    *
    * Whether or not this makes the run fail or not is up to the implementation. However, in the
-   * following cases, calling [[close]] may not fail the run: <ul> <li>[[scala.concurrent.Future
-   * Future]] is already completed when [[close]] is called. <li>This is a [[CERun]] and the
-   * event loop inside the VM is empty. </ul>
+   * following cases, calling [[close]] may not fail the run: <ul> <li>[[jsRunPrg]] is already
+   * completed when [[close]] is called. <li>This is a [[CERun]] and the event loop inside the
+   * VM is empty. </ul>
    *
    * Idempotent, async, nothrow.
    */

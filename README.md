@@ -1,12 +1,12 @@
 [![Scala CI](https://github.com/thijsbroersen/scala-js-env-playwright/actions/workflows/ci.yml/badge.svg)](https://github.com/thijsbroersen/scala-js-env-playwright/actions/workflows/ci.yml)
 # scala-js-env-playwright
-A JavaScript environment for Scala.js (a JSEnv) running playwright
+A JavaScript environment for Scala.js (a JSEnv) running playwright. It is only build for Scala 3 (supported by Mill and SBT 2.x)
 ## Requirements
 Playwright needs certain system dependencies [read the docs](https://playwright.dev/docs/browsers#install-system-dependencies)
 
 TLDR -> `npx playwright install-deps`
 
-## Usage
+## Usage SBT
 Add the following line to your `project/plugins.sbt` 
 ```scala
 // For Scala.js 1.x
@@ -16,19 +16,30 @@ Add the following line to your `build.sbt`
 ```scala
 Test / jsEnv := new PWEnv(
       browserName = "chrome",
-      headless = true,
-      showLogs = true
+      headless = true
     )
+```
+## Usage Mill (not yet part of Mill, tested in locally build Mill version)
+```scala
+override def jsEnvConfig = JsEnvConfig.Playwright(
+  browserName = "chrome",
+  headless = true
+)
 ```
 ## Avoid trouble
 * This is a very early version. It may not work for all projects. It is tested on chrome/chromium and firefox.
 * Few test cases are failing on webkit. Keep a watch on this space for updates.
 * It works only with Scala.js 1.x
 * Make sure the project is set up to use ModuleKind.ESModule in the Scala.js project.
+  * SBT 2.x
   ```scala
     // For Scala.js 1.x
     scalaJSLinkerConfig ~= { _.withModuleKind(ModuleKind.ESModule) }
     ```
+  * Mill
+  ```scala
+    override def moduleKind  = ModuleKind.ESModule
+  ```
 * Some projects which may need to use both Selenium and Playwright. 
 If it runs into google exception, add the following line to your `plugins.sbt` 
 ```scala
