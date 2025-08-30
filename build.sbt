@@ -6,6 +6,8 @@ import sbtrelease.ReleaseStateTransformations.{
 }
 import xerial.sbt.Sonatype.*
 
+ThisBuild / tlBaseVersion := "0.2"
+
 ThisBuild / sonatypeCredentialHost := sonatypeCentralHost
 ThisBuild / organization := "io.github.thijsbroersen"
 ThisBuild / organizationName := "ThijsBroersen"
