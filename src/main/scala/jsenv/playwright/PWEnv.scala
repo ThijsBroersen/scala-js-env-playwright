@@ -46,8 +46,7 @@ class PWEnv(
   System.setProperty("playwright.driver.impl", "jsenv.DriverJar")
   CEUtils.setupLogger(showLogs, debug)
 
-  override def start(input: Seq[Input], runConfig: RunConfig): JSRun = {
-    println(s"input is : ${input.toList.map(_.toString).mkString("\n")}")
+  override def start(input: Seq[Input], runConfig: RunConfig): JSRun =
     try {
       val newRunConfig = runConfig.withEnv(runConfig.env ++ runConfigEnv)
       validator.validate(newRunConfig)
@@ -67,7 +66,6 @@ class PWEnv(
         scribe.error(s"CEEnv.start failed with $t")
         JSRun.failed(t)
     }
-  }
 
   override def startWithCom(
       input: Seq[Input],

@@ -10,7 +10,7 @@ TLDR -> `npx playwright install-deps`
 Add the following line to your `project/plugins.sbt` 
 ```scala
 // For Scala.js 1.x
-libraryDependencies += "io.github.thijsbroersen" %% "scala-js-env-playwright" % "0.1.21"
+libraryDependencies += "io.github.thijsbroersen" %% "scala-js-env-playwright" % "0.2.2"
 ```
 Add the following line to your `build.sbt` 
 ```scala
