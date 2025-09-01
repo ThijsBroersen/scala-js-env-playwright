@@ -14,7 +14,7 @@ libraryDependencies += "io.github.thijsbroersen" %% "scala-js-env-playwright" % 
 ```
 Add the following line to your `build.sbt` 
 ```scala
-Test / jsEnv := new PWEnv(
+Test / jsEnv := new PlaywrightJSEnv(
       browserName = "chrome",
       headless = true
     )
@@ -65,7 +65,7 @@ libraryDependencies += "com.google.guava" % "guava" % "33.0.0-jre"
 
 ## Default configuration
 ```scala
-jsEnv := new jsenv.playwright.PWEnv(
+jsEnv := new jsenv.playwright.PlaywrightJSEnv(
   browserName = "chrome",
   headless = true,
   showLogs = false,
@@ -80,7 +80,7 @@ When not passing launchOptions, default launch options are as follows:
 
 ### Chrome/chromium
 ```scala
-jsEnv := new jsenv.playwright.PWEnv(
+jsEnv := new jsenv.playwright.PlaywrightJSEnv(
   browserName = "chrome",
   launchOptions = List(
       "--disable-extensions", 
@@ -95,7 +95,7 @@ jsEnv := new jsenv.playwright.PWEnv(
 
 ### Firefox
 ```scala
-jsEnv := new jsenv.playwright.PWEnv(
+jsEnv := new jsenv.playwright.PlaywrightJSEnv(
   browserName = "firefox",
   launchOptions = List(
       "--disable-web-security"
@@ -105,7 +105,7 @@ jsEnv := new jsenv.playwright.PWEnv(
 
 ### Webkit
 ```scala
-jsEnv := new jsenv.playwright.PWEnv(
+jsEnv := new jsenv.playwright.PlaywrightJSEnv(
   browserName = "webkit",
   launchOptions = List(
       "--disable-extensions", 
@@ -122,9 +122,9 @@ It is work in progress.
 As a workaround introducing delay in the test cases may help to keep the browser alive. 
 
 ## Debugging
-debug parameter can be passed to the PWEnv constructor to enable debugging. It will also display the version of the browser which is used.
+debug parameter can be passed to the PlaywrightJSEnv constructor to enable debugging. It will also display the version of the browser which is used.
 ```scala
-Test / jsEnv := new PWEnv(
+Test / jsEnv := new PlaywrightJSEnv(
       browserName = "chrome",
       headless = true,
       showLogs = true,

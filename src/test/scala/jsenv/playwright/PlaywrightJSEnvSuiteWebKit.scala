@@ -4,7 +4,7 @@
 // import org.scalajs.jsenv.test._
 
 // @RunWith(classOf[JSEnvSuiteRunner])
-// class PWSuiteWebKit
+// class PlaywrightJSEnvSuiteWebKit
 //     extends JSEnvSuite(
-//       JSEnvSuiteConfig(new PWEnv("webkit", debug = false, headless = true))
+//       JSEnvSuiteConfig(PlaywrightJSEnv.webkit(debug = false, headless = true))
 //     )

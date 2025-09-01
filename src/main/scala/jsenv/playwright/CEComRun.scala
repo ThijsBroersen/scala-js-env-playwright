@@ -1,7 +1,5 @@
 package io.github.thijsbroersen.jsenv.playwright
 
-import io.github.thijsbroersen.jsenv.playwright.PWEnv.Config
-
 import org.scalajs.jsenv.Input
 import org.scalajs.jsenv.JSComRun
 import org.scalajs.jsenv.RunConfig
@@ -13,17 +11,13 @@ import scala.concurrent._
 
 // browserName, headless, pwConfig, runConfig, input, onMessage
 class CEComRun(
-    override val browserName: String,
-    override val headless: Boolean,
-    override val pwConfig: Config,
-    override val runConfig: RunConfig,
+    override val playwrightJsEnv: PlaywrightJSEnv,
     override val input: Seq[Input],
-    override val launchOptions: List[String],
-    override val additionalLaunchOptions: List[String],
+    override val runConfig: RunConfig,
     onMessage: String => Unit
 ) extends JSComRun
     with Runner {
-  scribe.debug(s"Creating CEComRun for $browserName")
+  scribe.debug(s"Creating CEComRun for ${playwrightJsEnv.capabilities.browserName}")
   // enableCom is false for CERun and true for CEComRun
   // send is called only from JSComRun
   override def send(msg: String): Unit = {
@@ -34,7 +28,7 @@ class CEComRun(
   override protected def receivedMessage(msg: String): Unit = onMessage(msg)
 
   lazy val future: Future[Unit] =
-    jsRunPrg(browserName, headless, isComEnabled = true, pwLaunchOptions).use_.unsafeToFuture()
+    jsRunPrg(isComEnabled = true).use_.unsafeToFuture()
 
 }
 

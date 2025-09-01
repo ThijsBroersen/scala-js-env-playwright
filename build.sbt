@@ -14,7 +14,7 @@ ThisBuild / organizationName := "ThijsBroersen"
 ThisBuild / scalaVersion := "3.7.2"
 ThisBuild / sonatypeProfileName := "io.github.thijsbroersen"
 ThisBuild / versionScheme := Some("early-semver")
-ThisBuild / tlVersionIntroduced := Map("3.7" -> "0.1.21")
+ThisBuild / tlVersionIntroduced := Map("3.7" -> "0.2.3")
 ThisBuild / tlMimaPreviousVersions := Set.empty
 ThisBuild / licenses := Seq(
   "BSD-3-Clause" -> url("https://opensource.org/licenses/BSD-3-Clause")

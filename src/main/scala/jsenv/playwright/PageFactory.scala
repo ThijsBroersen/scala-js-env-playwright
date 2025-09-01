@@ -2,15 +2,16 @@ package io.github.thijsbroersen.jsenv.playwright
 
 import com.microsoft.playwright.Browser
 import com.microsoft.playwright.BrowserType
-import com.microsoft.playwright.BrowserType.LaunchOptions
 import com.microsoft.playwright.Page
 import com.microsoft.playwright.Playwright
 
 import cats.effect.IO
 import cats.effect.Resource
 
+import scala.jdk.CollectionConverters._
+
 object PageFactory {
-  def pageBuilder(browser: Browser): Resource[IO, Page] =
+  private def pageBuilder(browser: Browser): Resource[IO, Page] =
     Resource.make(IO {
       val pg = browser.newContext().newPage()
       scribe.debug(s"Creating page ${pg.hashCode()} ")
@@ -22,22 +23,30 @@ object PageFactory {
 
   private def browserBuilder(
       playwright: Playwright,
-      browserName: String,
-      headless: Boolean,
-      launchOptions: LaunchOptions
+      capabilities: PlaywrightJSEnv.Capabilities
   ): Resource[IO, Browser] =
     Resource.make(IO {
 
-      val browserType: BrowserType = browserName.toLowerCase match {
-        case "chromium" | "chrome" =>
+      val launchOptions = new BrowserType.LaunchOptions()
+        .setHeadless(capabilities.headless)
+        .setArgs(capabilities.launchOptions.asJava)
+
+      val browserType: BrowserType = capabilities match
+        case capabilities: PlaywrightJSEnv.ChromeOptions =>
           playwright.chromium()
-        case "firefox" =>
+        case capabilities: PlaywrightJSEnv.FirefoxOptions =>
+          launchOptions.setFirefoxUserPrefs(
+            capabilities
+              .firefoxUserPrefs
+              // .view
+              // .mapValues(_.asInstanceOf[java.lang.Object])
+              // .toMap
+              .asJava)
           playwright.firefox()
-        case "webkit" =>
+        case capabilities: PlaywrightJSEnv.WebkitOptions =>
           playwright.webkit()
-        case _ => throw new IllegalArgumentException("Invalid browser type")
-      }
-      val browser = browserType.launch(launchOptions.setHeadless(headless))
+
+      val browser = browserType.launch(launchOptions)
       scribe.info(
         s"Creating browser ${browser.browserType().name()} version ${browser.version()} with ${browser.hashCode()}"
       )
@@ -59,17 +68,13 @@ object PageFactory {
       })
 
   def createPage(
-      browserName: String,
-      headless: Boolean,
-      launchOptions: LaunchOptions
+      capabilities: PlaywrightJSEnv.Capabilities
   ): Resource[IO, Page] =
     for {
       playwright <- playWrightBuilder
       browser <- browserBuilder(
         playwright,
-        browserName,
-        headless,
-        launchOptions
+        capabilities
       )
       page <- pageBuilder(browser)
     } yield page

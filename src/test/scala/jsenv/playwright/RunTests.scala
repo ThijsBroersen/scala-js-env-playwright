@@ -14,7 +14,7 @@ import java.nio.file.Files
 
 class RunTests {
   val withCom = true
-  private val kit = new TestKit(new PWEnv("chrome", debug = true), 100.second)
+  private val kit = new TestKit(PlaywrightJSEnv.chrome(debug = true), 100.second)
 
   private def withRun(input: Seq[Input])(body: Run => Unit): Unit =
     if (withCom) kit.withComRun(input)(body)

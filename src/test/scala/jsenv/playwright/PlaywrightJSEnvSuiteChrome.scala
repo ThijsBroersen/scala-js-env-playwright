@@ -4,7 +4,7 @@ import org.junit.runner.RunWith
 import org.scalajs.jsenv.test._
 
 @RunWith(classOf[JSEnvSuiteRunner])
-class PWSuiteChrome
+class PlaywrightJSEnvSuiteChrome
     extends JSEnvSuite(
-      JSEnvSuiteConfig(new PWEnv("chrome", debug = false, headless = true))
+      JSEnvSuiteConfig(PlaywrightJSEnv.chrome(debug = false, headless = true))
     )

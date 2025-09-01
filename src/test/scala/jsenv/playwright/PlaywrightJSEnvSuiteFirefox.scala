@@ -4,7 +4,7 @@ import org.junit.runner.RunWith
 import org.scalajs.jsenv.test._
 
 @RunWith(classOf[JSEnvSuiteRunner])
-class PWSuiteFirefox
+class PlaywrightJSEnvSuiteFirefox
     extends JSEnvSuite(
-      JSEnvSuiteConfig(new PWEnv("firefox", debug = false, headless = true))
+      JSEnvSuiteConfig(PlaywrightJSEnv.firefox(debug = false, headless = true))
     )

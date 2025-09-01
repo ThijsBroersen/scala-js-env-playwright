@@ -1,11 +1,7 @@
 package io.github.thijsbroersen.jsenv.playwright
 
-import io.github.thijsbroersen.jsenv.playwright.PWEnv.Config
 import io.github.thijsbroersen.jsenv.playwright.PageFactory._
-import io.github.thijsbroersen.jsenv.playwright.ResourcesFactory._
 
-import com.microsoft.playwright.BrowserType
-import com.microsoft.playwright.BrowserType.LaunchOptions
 import org.scalajs.jsenv.Input
 import org.scalajs.jsenv.RunConfig
 
@@ -13,22 +9,17 @@ import cats.effect.IO
 import cats.effect.Resource
 
 import scala.concurrent.duration.DurationInt
-import scala.jdk.CollectionConverters._
 
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.ConcurrentLinkedQueue
 
 trait Runner {
-  val browserName: String = "" // or provide actual values
-  val headless: Boolean = false // or provide actual values
-  val pwConfig: Config = Config() // or provide actual values
-  val runConfig: RunConfig = RunConfig() // or provide actual values
-  val input: Seq[Input] = Seq.empty // or provide actual values
-  val launchOptions: List[String] = Nil
-  val additionalLaunchOptions: List[String] = Nil
+  def playwrightJsEnv: PlaywrightJSEnv
+  def input: Seq[Input]
+  def runConfig: RunConfig
 
   // enableCom is false for CERun and true for CEComRun
-  protected val enableCom = false
+  // protected val enableCom = false
   protected val intf = "this.scalajsPlayWrightInternalInterface"
   protected val sendQueue = new ConcurrentLinkedQueue[String]
   // receivedMessage is called only from JSComRun. Hence its implementation is empty in CERun
@@ -51,11 +42,8 @@ trait Runner {
   // If want to close then close driver, streams, materializer
   // After future is completed close driver, streams, materializer
 
-  def jsRunPrg(
-      browserName: String,
-      headless: Boolean,
-      isComEnabled: Boolean,
-      launchOptions: LaunchOptions
+  private[playwright] def jsRunPrg(
+      isComEnabled: Boolean = false
   ): Resource[IO, Unit] = for {
     _ <- Resource.make(IO.unit)(_ =>
       IO {
@@ -64,30 +52,28 @@ trait Runner {
     _ <- Resource.pure(
       scribe.info(
         s"Begin Main with isComEnabled $isComEnabled " +
-          s"and  browserName $browserName " +
-          s"and headless is $headless "
+          s"and  browserName ${playwrightJsEnv.capabilities.browserName} " +
+          s"and headless is ${playwrightJsEnv.capabilities.headless} "
       )
     )
     pageInstance <- createPage(
-      browserName,
-      headless,
-      launchOptions
+      playwrightJsEnv.capabilities
     )
-    _ <- preparePageForJsRun(
+    _ <- ResourcesFactory.preparePageForJsRun(
       pageInstance,
-      materializer(pwConfig),
+      ResourcesFactory.materializer(playwrightJsEnv.config),
       input,
       isComEnabled
     )
-    connectionReady <- isConnectionUp(pageInstance, intf)
+    connectionReady <- ResourcesFactory.isConnectionUp(pageInstance, intf)
     _ <-
       if (!connectionReady) Resource.sleep[IO](100.milliseconds)
       else Resource.unit[IO]
     _ <-
-      if (!connectionReady) isConnectionUp(pageInstance, intf)
+      if (!connectionReady) ResourcesFactory.isConnectionUp(pageInstance, intf)
       else Resource.unit[IO]
-    out <- outputStream(runConfig)
-    _ <- processUntilStop(
+    out <- ResourcesFactory.outputStream(runConfig)
+    _ <- ResourcesFactory.processUntilStop(
       wantToClose,
       pageInstance,
       intf,
@@ -134,38 +120,6 @@ trait Runner {
       throw new Exception("Logging stack trace")
     catch {
       case e: Exception => e.printStackTrace()
-    }
-
-  protected lazy val pwLaunchOptions =
-    browserName.toLowerCase() match {
-      case "chromium" | "chrome" =>
-        new BrowserType.LaunchOptions().setArgs(
-          if (launchOptions.isEmpty)
-            (PWEnv.chromeLaunchOptions ++ additionalLaunchOptions).asJava
-          else (launchOptions ++ additionalLaunchOptions).asJava
-        )
-      case "firefox" =>
-        import scala.jdk.CollectionConverters._
-        new BrowserType.LaunchOptions()
-          .setFirefoxUserPrefs(
-            PWEnv
-              .firefoxUserPrefs
-              .view
-              .mapValues(_.asInstanceOf[java.lang.Object])
-              .toMap
-              .asJava)
-          .setArgs(
-            if (launchOptions.isEmpty)
-              (PWEnv.firefoxLaunchOptions ++ additionalLaunchOptions).asJava
-            else (launchOptions ++ additionalLaunchOptions).asJava
-          )
-      case "webkit" =>
-        new BrowserType.LaunchOptions().setArgs(
-          if (launchOptions.isEmpty)
-            (PWEnv.webkitLaunchOptions ++ additionalLaunchOptions).asJava
-          else (launchOptions ++ additionalLaunchOptions).asJava
-        )
-      case _ => throw new IllegalArgumentException("Invalid browser type")
     }
 
 }

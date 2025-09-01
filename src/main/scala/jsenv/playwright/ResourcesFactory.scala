@@ -1,6 +1,6 @@
 package io.github.thijsbroersen.jsenv.playwright
 
-import io.github.thijsbroersen.jsenv.playwright.PWEnv.Config
+import io.github.thijsbroersen.jsenv.playwright.PlaywrightJSEnv.Config
 
 import com.microsoft.playwright.Page
 import org.scalajs.jsenv.Input

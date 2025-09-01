@@ -1,6 +1,6 @@
 package io.github.thijsbroersen.jsenv.playwright
 
-import io.github.thijsbroersen.jsenv.playwright.PWEnv.Config
+import io.github.thijsbroersen.jsenv.playwright.PlaywrightJSEnv.Config
 
 import org.scalajs.jsenv._
 
@@ -14,50 +14,27 @@ import java.nio.file.Paths
 /**
  * Playwright JS environment
  *
- * @param browserName
- *   browser name, options are "chromium", "chrome", "firefox", "webkit", default is "chromium"
- * @param headless
- *   headless mode, default is true
- * @param showLogs
- *   show logs, default is false
- * @param debug
- *   debug mode, default is false
- * @param pwConfig
- *   Playwright configuration
- * @param launchOptions
- *   override launch options, if not provided default launch options are used
- * @param additionalLaunchOptions
- *   additional launch options (added to (default) launch options)
+ * @param capabilities
+ *   PlaywrightJSEnv capabilities
+ * @param config
+ *   PlaywrightJSEnv config
  */
-class PWEnv(
-    browserName: String = "chromium",
-    headless: Boolean = true,
-    showLogs: Boolean = false,
-    debug: Boolean = false,
-    pwConfig: Config = Config(),
-    runConfigEnv: Map[String, String] = Map.empty,
-    launchOptions: List[String] = Nil,
-    additionalLaunchOptions: List[String] = Nil
+case class PlaywrightJSEnv(
+    capabilities: PlaywrightJSEnv.Capabilities,
+    config: PlaywrightJSEnv.Config
 ) extends JSEnv {
 
   private lazy val validator =
     RunConfig.Validator().supportsInheritIO().supportsOnOutputStream().supportsEnv()
-  override val name: String = s"CEEnv with $browserName"
+
+  override val name: String = s"Playwright + ${capabilities.browserName}"
   System.setProperty("playwright.driver.impl", "jsenv.DriverJar")
-  CEUtils.setupLogger(showLogs, debug)
+  CEUtils.setupLogger(capabilities.showLogs, capabilities.debug)
 
   override def start(input: Seq[Input], runConfig: RunConfig): JSRun =
     try {
-      val newRunConfig = runConfig.withEnv(runConfig.env ++ runConfigEnv)
-      validator.validate(newRunConfig)
-      new CERun(
-        browserName,
-        headless,
-        pwConfig,
-        newRunConfig,
-        input,
-        launchOptions,
-        additionalLaunchOptions)
+      validator.validate(runConfig)
+      new CERun(this, input, runConfig)
     } catch {
       case ve: java.lang.IllegalArgumentException =>
         scribe.error(s"CEEnv.startWithCom failed with throw ve $ve")
@@ -73,16 +50,11 @@ class PWEnv(
       onMessage: String => Unit
   ): JSComRun =
     try {
-      val newRunConfig = runConfig.withEnv(runConfig.env ++ runConfigEnv)
-      validator.validate(newRunConfig)
+      validator.validate(runConfig)
       new CEComRun(
-        browserName,
-        headless,
-        pwConfig,
-        newRunConfig,
+        this,
         input,
-        launchOptions,
-        additionalLaunchOptions,
+        runConfig,
         onMessage
       )
     } catch {
@@ -96,7 +68,7 @@ class PWEnv(
 
 }
 
-object PWEnv {
+object PlaywrightJSEnv {
   case class Config(
       materialization: Config.Materialization = Config.Materialization.Temp
   ) {
@@ -107,7 +79,7 @@ object PWEnv {
      *
      * Materialization is necessary so that virtual files can be referred to by name. If you do
      * not know/care how your files are referred to, this is a good default choice. It is also
-     * the default of [[PWEnv.Config]].
+     * the default of [[PlaywrightJSEnv.Config]].
      */
     def withMaterializeInTemp: Config =
       copy(materialization = Materialization.Temp)
@@ -176,7 +148,35 @@ object PWEnv {
     }
   }
 
-  val chromeLaunchOptions = List(
+  sealed trait Capabilities:
+    def browserName: String
+    def headless: Boolean
+    def showLogs: Boolean
+    def debug: Boolean
+    def launchOptions: List[String]
+
+  def chrome(
+      headless: Boolean = true,
+      showLogs: Boolean = false,
+      debug: Boolean = false,
+      launchOptions: List[String] = defaultChromeLaunchOptions): PlaywrightJSEnv =
+    PlaywrightJSEnv(ChromeOptions(headless, showLogs, debug, launchOptions), Config())
+
+  case class ChromeOptions(
+      headless: Boolean = true,
+      showLogs: Boolean = false,
+      debug: Boolean = false,
+      launchOptions: List[String] = defaultChromeLaunchOptions
+  ) extends Capabilities {
+    def withHeadless(value: Boolean): ChromeOptions = copy(headless = value)
+    def withShowLogs(value: Boolean): ChromeOptions = copy(showLogs = value)
+    def withDebug(value: Boolean): ChromeOptions = copy(debug = value)
+    def withLaunchOptions(value: List[String]): ChromeOptions = copy(launchOptions = value)
+
+    def browserName: String = "chrome"
+  }
+
+  val defaultChromeLaunchOptions = List(
     "--disable-extensions",
     "--disable-web-security",
     "--allow-running-insecure-content",
@@ -185,16 +185,62 @@ object PWEnv {
     "--disable-gpu"
   )
 
-  val firefoxLaunchOptions: List[String] = List()
+  def firefox(
+      headless: Boolean = true,
+      showLogs: Boolean = false,
+      debug: Boolean = false,
+      firefoxUserPrefs: Map[String, String | Double | Boolean] = defaultFirefoxUserPrefs
+  ): PlaywrightJSEnv =
+    PlaywrightJSEnv(FirefoxOptions(headless, showLogs, debug, firefoxUserPrefs), Config())
 
-  val firefoxUserPrefs: Map[String, Any] =
+  case class FirefoxOptions(
+      headless: Boolean = true,
+      showLogs: Boolean = false,
+      debug: Boolean = false,
+      firefoxUserPrefs: Map[String, String | Double | Boolean] = defaultFirefoxUserPrefs
+  ) extends Capabilities {
+    def withHeadless(value: Boolean): FirefoxOptions = copy(headless = value)
+    def withShowLogs(value: Boolean): FirefoxOptions = copy(showLogs = value)
+    def withDebug(value: Boolean): FirefoxOptions = copy(debug = value)
+    def withFirefoxUserPrefs(value: Map[String, String | Double | Boolean]): FirefoxOptions =
+      copy(firefoxUserPrefs = value)
+
+    def launchOptions: List[String] = Nil
+
+    def browserName: String = "firefox"
+  }
+
+  val defaultFirefoxUserPrefs: Map[String, String | Double | Boolean] =
     Map(
       "security.mixed_content.block_active_content" -> false,
       "security.mixed_content.upgrade_display_content" -> false,
       "security.file_uri.strict_origin_policy" -> false
     )
 
-  val webkitLaunchOptions = List(
+  def webkit(
+      headless: Boolean = true,
+      showLogs: Boolean = false,
+      debug: Boolean = false,
+      launchOptions: List[String] = defaultWebkitLaunchOptions
+  ): PlaywrightJSEnv =
+    PlaywrightJSEnv(WebkitOptions(headless, showLogs, debug, launchOptions), Config())
+
+  case class WebkitOptions(
+      headless: Boolean = true,
+      showLogs: Boolean = false,
+      debug: Boolean = false,
+      launchOptions: List[String] = defaultWebkitLaunchOptions
+  ) extends Capabilities {
+    def withHeadless(value: Boolean): WebkitOptions = copy(headless = value)
+    def withShowLogs(value: Boolean): WebkitOptions = copy(showLogs = value)
+    def withDebug(value: Boolean): WebkitOptions = copy(debug = value)
+    def withLaunchOptions(value: List[String]): WebkitOptions = copy(launchOptions = value)
+
+    def browserName: String = "webkit"
+
+  }
+
+  val defaultWebkitLaunchOptions = List(
     "--disable-extensions",
     "--disable-web-security",
     "--allow-running-insecure-content",

@@ -45,7 +45,7 @@ abstract class FileMaterializer extends AutoCloseable {
 }
 
 object FileMaterializer {
-  import PWEnv.Config.Materialization
+  import PlaywrightJSEnv.Config.Materialization
   def apply(m: Materialization): FileMaterializer = m match {
     case Materialization.Temp =>
       new TempDirFileMaterializer
@@ -53,6 +53,7 @@ object FileMaterializer {
     case Materialization.Server(contentDir, webRoot) =>
       new ServerDirFileMaterializer(contentDir, webRoot)
   }
+
 }
 
 /**
