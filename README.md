@@ -14,15 +14,13 @@ libraryDependencies += "io.github.thijsbroersen" %% "scala-js-env-playwright" % 
 ```
 Add the following line to your `build.sbt` 
 ```scala
-Test / jsEnv := new PlaywrightJSEnv(
-      browserName = "chrome",
+Test / jsEnv := new PlaywrightJSEnv.chrome(
       headless = true
     )
 ```
 ## Usage Mill (not yet part of Mill, tested in locally build Mill version)
 ```scala
-override def jsEnvConfig = JsEnvConfig.Playwright(
-  browserName = "chrome",
+override def jsEnvConfig = JsEnvConfig.Playwright.chrome(
   headless = true
 )
 ```
@@ -65,8 +63,7 @@ libraryDependencies += "com.google.guava" % "guava" % "33.0.0-jre"
 
 ## Default configuration
 ```scala
-jsEnv := new jsenv.playwright.PlaywrightJSEnv(
-  browserName = "chrome",
+jsEnv := new jsenv.playwright.PlaywrightJSEnv.chrome(
   headless = true,
   showLogs = false,
 )
@@ -80,8 +77,7 @@ When not passing launchOptions, default launch options are as follows:
 
 ### Chrome/chromium
 ```scala
-jsEnv := new jsenv.playwright.PlaywrightJSEnv(
-  browserName = "chrome",
+jsEnv := new jsenv.playwright.PlaywrightJSEnv.chrome(
   launchOptions = List(
       "--disable-extensions", 
       "--disable-web-security", 
@@ -95,18 +91,18 @@ jsEnv := new jsenv.playwright.PlaywrightJSEnv(
 
 ### Firefox
 ```scala
-jsEnv := new jsenv.playwright.PlaywrightJSEnv(
-  browserName = "firefox",
-  launchOptions = List(
-      "--disable-web-security"
+jsEnv := new jsenv.playwright.PlaywrightJSEnv.firefox(
+  firefoxUserPrefs = Map(
+      "security.mixed_content.block_active_content" -> false,
+      "security.mixed_content.upgrade_display_content" -> false,
+      "security.file_uri.strict_origin_policy" -> false
     )
 )
 ```
 
 ### Webkit
 ```scala
-jsEnv := new jsenv.playwright.PlaywrightJSEnv(
-  browserName = "webkit",
+jsEnv := new jsenv.playwright.PlaywrightJSEnv.webkit(
   launchOptions = List(
       "--disable-extensions", 
       "--disable-web-security", 
@@ -124,17 +120,9 @@ As a workaround introducing delay in the test cases may help to keep the browser
 ## Debugging
 debug parameter can be passed to the PlaywrightJSEnv constructor to enable debugging. It will also display the version of the browser which is used.
 ```scala
-Test / jsEnv := new PlaywrightJSEnv(
-      browserName = "chrome",
+Test / jsEnv := new PlaywrightJSEnv.chrome(
       headless = true,
       showLogs = true,
       debug = true
     )
 ```
-
-## Wiki
-Watch this space for more details on how to use this library.
-
-## References
-* Sample project using this JSEnv: https://github.com/thijsbroersen/scalajs-sbt-vite-laminar-chartjs-example
-* Fork of Laminar: https://github.com/thijsbroersen/Laminar
