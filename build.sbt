@@ -49,13 +49,12 @@ ThisBuild / githubWorkflowJavaVersions := Seq(JavaSpec.temurin("17"))
 lazy val root = (project in file(".")).settings(
   name := "scala-js-env-playwright",
   libraryDependencies ++= Seq(
-    "com.microsoft.playwright" % "playwright" % "1.54.0",
-    ("org.scala-js" %% "scalajs-js-envs" % "1.4.0").cross(CrossVersion.for3Use2_13),
-    ("org.scala-js" %% "scalajs-js-envs-test-kit" % "1.4.0" % Test)
-      .cross(CrossVersion.for3Use2_13),
+    "com.microsoft.playwright" % "playwright" % "1.61.0",
+    ("org.scala-js" %% "scalajs-js-envs" % "1.6.0").cross(CrossVersion.for3Use2_13),
+    ("org.scala-js" %% "scalajs-js-envs-test-kit" % "1.6.0" % Test).cross(CrossVersion.for3Use2_13),
     "com.google.jimfs" % "jimfs" % "1.3.1",
-    "com.outr" %% "scribe" % "3.17.0",
-    "org.typelevel" %% "cats-effect" % "3.6.3",
+    "com.outr" %% "scribe" % "3.19.0",
+    "org.typelevel" %% "cats-effect" % "3.7.0",
     "com.novocode" % "junit-interface" % "0.11" % Test
   ),
   javacOptions += "-nowarn",
