@@ -1,9 +1,5 @@
-val sbtTypelevelVersion = "0.8.0"
-addSbtPlugin("com.eed3si9n" % "sbt-assembly" % "2.3.1")
+addSbtPlugin("com.github.sbt" % "sbt-ci-release" % "1.11.2")
+addSbtPlugin("org.scalameta" % "sbt-scalafmt" % "2.6.1")
+addSbtPlugin("ch.epfl.scala" % "sbt-scalafix" % "0.14.6")
 addSbtPlugin("com.github.sbt" % "sbt-release" % "1.4.0")
 addSbtPlugin("com.github.sbt" % "sbt-pgp" % "2.3.1")
-addSbtPlugin("org.xerial.sbt" % "sbt-sonatype" % "3.12.2")
-addSbtPlugin("org.scoverage" % "sbt-scoverage" % "2.3.1")
-addSbtPlugin("org.typelevel" % "sbt-typelevel" % sbtTypelevelVersion)
-addSbtPlugin("org.typelevel" % "sbt-typelevel-scalafix" % sbtTypelevelVersion)
-addSbtPlugin("org.typelevel" % "sbt-typelevel-site" % sbtTypelevelVersion)

@@ -7,15 +7,44 @@ import java.nio.file.Files
 import java.nio.file.Path
 
 private object JSSetup {
-  def setupFile(enableCom: Boolean): Path = {
+  def setupFile(enableCom: Boolean, env: Map[String, String] = Map.empty): Path = {
     val path = Jimfs.newFileSystem().getPath("setup.js")
-    val contents = setupCode(enableCom).getBytes(StandardCharsets.UTF_8)
+    val contents = setupCode(enableCom, env).getBytes(StandardCharsets.UTF_8)
     Files.write(path, contents)
   }
 
-  private def setupCode(enableCom: Boolean): String =
+  /**
+   * Encodes a string as a JS double-quoted string literal.
+   */
+  private def jsString(s: String): String = {
+    val sb = new StringBuilder("\"")
+    s.foreach {
+      case '\\' => sb.append("\\\\")
+      case '"' => sb.append("\\\"")
+      case '\n' => sb.append("\\n")
+      case '\r' => sb.append("\\r")
+      case '\t' => sb.append("\\t")
+      case c if c < 0x20 || c == '\u2028' || c == '\u2029' =>
+        sb.append(f"\\u${c.toInt}%04x")
+      case c => sb.append(c)
+    }
+    sb.append("\"").toString
+  }
+
+  private def envObjectLiteral(env: Map[String, String]): String =
+    env.map { case (k, v) => s"${jsString(k)}: ${jsString(v)}" }.mkString("{", ", ", "}")
+
+  private def setupCode(enableCom: Boolean, env: Map[String, String]): String =
     s"""
        |(function() {
+       |  // Expose RunConfig.env like Node.js does, via process.env.
+       |  var envVars = ${envObjectLiteral(env)};
+       |  var proc = (typeof this.process === 'object' && this.process !== null)
+       |    ? this.process : {};
+       |  proc.env = proc.env || {};
+       |  for (var key in envVars) proc.env[key] = envVars[key];
+       |  this.process = proc;
+       |
        |  // Buffers for console.log / console.error
        |  var consoleLog = [];
        |  var consoleError = [];

@@ -6,5 +6,5 @@ import org.scalajs.jsenv.test._
 @RunWith(classOf[JSEnvSuiteRunner])
 class PlaywrightJSEnvSuiteFirefox
     extends JSEnvSuite(
-      JSEnvSuiteConfig(PlaywrightJSEnv.firefox(debug = false, headless = true))
+      PlaywrightSuiteConfig(PlaywrightJSEnv.firefox(debug = false, headless = true))
     )

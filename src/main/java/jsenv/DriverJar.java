@@ -16,10 +16,6 @@ package jsenv;
  * limitations under the License.
  */
 
-//package com.microsoft.playwright.impl.driver.jar;
-// String driverImpl =
-//      System.getProperty("playwright.driver.impl", "com.microsoft.playwright.impl.driver.jar.DriverJar");
-
 import com.microsoft.playwright.impl.driver.Driver;
 
 import java.io.IOException;
@@ -117,14 +113,22 @@ public class DriverJar extends Driver {
         }
     }
 
-    public static URI getDriverResourceURI() throws URISyntaxException {
-        // ClassLoader classloader = Thread.currentThread().getContextClassLoader();
-        ClassLoader classloader = DriverJar.class.getClassLoader();
-        return classloader.getResource("driver/" + platformDir()).toURI();
+    void extractDriverToTempDir() throws URISyntaxException, IOException {
+        extractResourceToDir("driver/package", driverTempDir.resolve("package"));
+        if (preinstalledNodePath == null) {
+            String platformResource = "driver/" + platformDir();
+            if (DriverJar.class.getClassLoader().getResource(platformResource) == null) {
+                throw new RuntimeException("Failed to find the bundled Node.js for platform '" + platformDir()
+                        + "'. Add the com.microsoft.playwright:driver-bundle dependency, or set the "
+                        + PLAYWRIGHT_NODEJS_PATH + " environment variable (or the playwright.nodejs.path system "
+                        + "property) to point at a preinstalled Node.js.");
+            }
+            extractResourceToDir(platformResource, driverTempDir);
+        }
     }
 
-    void extractDriverToTempDir() throws URISyntaxException, IOException {
-        URI originalUri = getDriverResourceURI();
+    private void extractResourceToDir(String resourcePath, Path destDir) throws URISyntaxException, IOException {
+        URI originalUri = DriverJar.class.getClassLoader().getResource(resourcePath).toURI();
         URI uri = maybeExtractNestedJar(originalUri);
 
         // Create zip filesystem if loading from jar.
@@ -136,14 +140,8 @@ public class DriverJar extends Driver {
             // See https://github.com/microsoft/playwright-java/issues/306
             Path srcRootDefaultFs = Paths.get(srcRoot.toString());
             Files.walk(srcRoot).forEach(fromPath -> {
-                if (preinstalledNodePath != null) {
-                    String fileName = fromPath.getFileName().toString();
-                    if ("node.exe".equals(fileName) || "node".equals(fileName)) {
-                        return;
-                    }
-                }
                 Path relative = srcRootDefaultFs.relativize(Paths.get(fromPath.toString()));
-                Path toPath = driverTempDir.resolve(relative.toString());
+                Path toPath = destDir.resolve(relative.toString());
                 try {
                     if (Files.isDirectory(fromPath)) {
                         Files.createDirectories(toPath);

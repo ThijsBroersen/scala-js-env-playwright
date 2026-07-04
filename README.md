@@ -26,8 +26,12 @@ override def jsEnvConfig = JsEnvConfig.Playwright.chrome(
 ```
 ## Avoid trouble
 * This is a very early version. It may not work for all projects. It is tested on chrome/chromium and firefox.
-* Few test cases are failing on webkit. Keep a watch on this space for updates.
+* WebKit support exists but its driver process has been observed to hang indefinitely
+  on some Linux setups (e.g. Ubuntu). The WebKit test suite is skipped by default; set
+  `PLAYWRIGHT_WEBKIT_TESTS=1` to run it in an environment known to work (e.g. macOS).
 * It works only with Scala.js 1.x
+* Supported inputs are scripts (`ModuleKind.NoModule`) and ES modules (`ModuleKind.ESModule`).
+  CommonJS modules are not supported: browsers have no `require`/`module.exports`.
 * Make sure the project is set up to use ModuleKind.ESModule in the Scala.js project.
   * SBT 2.x
   ```scala
@@ -48,16 +52,20 @@ libraryDependencies += "com.google.guava" % "guava" % "33.0.0-jre"
 * chrome
 * chromium (same as chrome)
 * firefox
-* webkit (experimental) - Works well on macOS. Mileage may vary on other platforms.
+* webkit (experimental, see "Avoid trouble" above)
+
+## Environment variables
+Environment variables passed to a run via `RunConfig.env` are exposed to the JavaScript
+code as `process.env.<NAME>`, mirroring Node.js.
 
 ## Compatibility notes
 ### Scala versions
 * This library can be used with any scala version 3.x
 * This project is compiled with scala 3.7.2
 ### sbt versions
-* This library can be used with any sbt version 1.x 
+* This library can be used with sbt 1.x or 2.x
 ### Playwright versions
-* This library can be used with playwright version 1.54.0 `"com.microsoft.playwright" % "playwright" % "1.54.0"`
+* This library can be used with playwright version 1.61.0 `"com.microsoft.playwright" % "playwright" % "1.61.0"`
 ### JDK versions
 * This library is tested on JDK17
 
@@ -71,7 +79,7 @@ jsEnv := new jsenv.playwright.PlaywrightJSEnv.chrome(
 
 ## Launch options
 
-The launch options are used to enable/disable the browser features. They can be overridden via the launchOptions parameter or extended via the additionalLaunchOptions parameter.
+The launch options are used to enable/disable browser features. They can be overridden via the launchOptions parameter.
 
 When not passing launchOptions, default launch options are as follows:
 
@@ -101,15 +109,11 @@ jsEnv := new jsenv.playwright.PlaywrightJSEnv.firefox(
 ```
 
 ### Webkit
+WebKit does not accept Chromium-style launch flags (it refuses to start when given any),
+so its default launch options are empty:
 ```scala
 jsEnv := new jsenv.playwright.PlaywrightJSEnv.webkit(
-  launchOptions = List(
-      "--disable-extensions", 
-      "--disable-web-security", 
-      "--allow-running-insecure-content", 
-      "--disable-site-isolation-trials", 
-      "--allow-file-access-from-files"
-    )
+  launchOptions = Nil
 )
 ```
 
