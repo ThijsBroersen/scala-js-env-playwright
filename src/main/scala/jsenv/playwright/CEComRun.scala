@@ -17,7 +17,7 @@ class CEComRun(
     onMessage: String => Unit
 ) extends JSComRun
     with Runner {
-  scribe.debug(s"Creating CEComRun for ${playwrightJsEnv.capabilities.browserName}")
+  PWLogger.debug(s"Creating CEComRun for ${playwrightJsEnv.capabilities.browserName}")
   // enableCom is false for CERun and true for CEComRun
   // send is called only from JSComRun
   override def send(msg: String): Unit = {
@@ -27,7 +27,9 @@ class CEComRun(
   // receivedMessage is called only from JSComRun. Hence its implementation is empty in CERun
   override protected def receivedMessage(msg: String): Unit = onMessage(msg)
 
-  lazy val future: Future[Unit] =
+  // Start eagerly: the JSRun contract allows close() before future is ever
+  // awaited, which must still terminate the run and release its resources.
+  val future: Future[Unit] =
     jsRunPrg(isComEnabled = true).use_.unsafeToFuture()
 
 }

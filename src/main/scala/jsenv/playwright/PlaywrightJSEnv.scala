@@ -34,13 +34,14 @@ case class PlaywrightJSEnv(
   override def start(input: Seq[Input], runConfig: RunConfig): JSRun =
     try {
       validator.validate(runConfig)
+      CEUtils.validateInput(input)
       new CERun(this, input, runConfig)
     } catch {
       case ve: java.lang.IllegalArgumentException =>
-        scribe.error(s"CEEnv.startWithCom failed with throw ve $ve")
+        PWLogger.error(s"CEEnv.startWithCom failed with throw ve $ve")
         throw ve
       case NonFatal(t) =>
-        scribe.error(s"CEEnv.start failed with $t")
+        PWLogger.error(s"CEEnv.start failed with $t")
         JSRun.failed(t)
     }
 
@@ -51,6 +52,7 @@ case class PlaywrightJSEnv(
   ): JSComRun =
     try {
       validator.validate(runConfig)
+      CEUtils.validateInput(input)
       new CEComRun(
         this,
         input,
@@ -59,10 +61,10 @@ case class PlaywrightJSEnv(
       )
     } catch {
       case ve: java.lang.IllegalArgumentException =>
-        scribe.error(s"CEEnv.startWithCom failed with throw ve $ve")
+        PWLogger.error(s"CEEnv.startWithCom failed with throw ve $ve")
         throw ve
       case NonFatal(t) =>
-        scribe.error(s"CEEnv.startWithCom failed with $t")
+        PWLogger.error(s"CEEnv.startWithCom failed with $t")
         JSComRun.failed(t)
     }
 
@@ -104,9 +106,9 @@ object PlaywrightJSEnv {
      *
      * {{{
      *  jsSettings(
-     *    jsEnv := new SeleniumJSEnv(
-     *        new org.openqa.selenium.firefox.FirefoxOptions(),
-     *        SeleniumJSEnv.Config()
+     *    jsEnv := PlaywrightJSEnv(
+     *        PlaywrightJSEnv.ChromeOptions(),
+     *        PlaywrightJSEnv.Config()
      *          .withMaterializeInServer(".tmp", "http://localhost:8080/")
      *    )
      *  )
@@ -240,11 +242,7 @@ object PlaywrightJSEnv {
 
   }
 
-  val defaultWebkitLaunchOptions = List(
-    "--disable-extensions",
-    "--disable-web-security",
-    "--allow-running-insecure-content",
-    "--disable-site-isolation-trials",
-    "--allow-file-access-from-files"
-  )
+  // WebKit's browser binary does not understand Chromium-style flags and refuses
+  // to start when given any ("Cannot parse arguments: Unknown option ...").
+  val defaultWebkitLaunchOptions: List[String] = Nil
 }

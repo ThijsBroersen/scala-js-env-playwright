@@ -14,7 +14,7 @@ object PageFactory {
   private def pageBuilder(browser: Browser): Resource[IO, Page] =
     Resource.make(IO {
       val pg = browser.newContext().newPage()
-      scribe.debug(s"Creating page ${pg.hashCode()} ")
+      PWLogger.debug(s"Creating page ${pg.hashCode()} ")
       pg
     })(page =>
       IO {
@@ -47,23 +47,23 @@ object PageFactory {
           playwright.webkit()
 
       val browser = browserType.launch(launchOptions)
-      scribe.info(
+      PWLogger.info(
         s"Creating browser ${browser.browserType().name()} version ${browser.version()} with ${browser.hashCode()}"
       )
       browser
     })(browser =>
       IO {
-        scribe.debug(s"Closing browser with ${browser.hashCode()}")
+        PWLogger.debug(s"Closing browser with ${browser.hashCode()}")
         browser.close()
       })
 
   private def playWrightBuilder: Resource[IO, Playwright] =
     Resource.make(IO {
-      scribe.debug(s"Creating playwright")
+      PWLogger.debug(s"Creating playwright")
       Playwright.create()
     })(pw =>
       IO {
-        scribe.debug("Closing playwright")
+        PWLogger.debug("Closing playwright")
         pw.close()
       })
 

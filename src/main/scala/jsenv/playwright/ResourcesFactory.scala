@@ -11,6 +11,7 @@ import cats.effect.Resource
 
 import scala.annotation.tailrec
 import scala.concurrent.duration.DurationInt
+import scala.concurrent.duration.FiniteDuration
 
 import java.util
 import java.util.concurrent.atomic.AtomicBoolean
@@ -22,22 +23,44 @@ object ResourcesFactory {
       pageInstance: Page,
       materializerResource: Resource[IO, FileMaterializer],
       input: Seq[Input],
-      enableCom: Boolean
+      enableCom: Boolean,
+      env: Map[String, String]
   ): Resource[IO, Unit] =
     for {
       m <- materializerResource
       _ <- Resource.pure(
-        scribe.debug(s"Page instance is ${pageInstance.hashCode()}")
+        PWLogger.debug(s"Page instance is ${pageInstance.hashCode()}")
       )
       _ <- Resource.pure {
-        val setupJsScript = Input.Script(JSSetup.setupFile(enableCom))
-        val fullInput = setupJsScript +: input
-        val materialPage =
-          m.materialize(
-            "scalajsRun.html",
-            CEUtils.htmlPage(fullInput, m)
-          )
-        pageInstance.navigate(materialPage.toString)
+        try {
+          val setupJsScript = Input.Script(JSSetup.setupFile(enableCom, env))
+          val fullInput = setupJsScript +: input
+          val materialPage =
+            m.materialize(
+              "scalajsRun.html",
+              CEUtils.htmlPage(fullInput, m)
+            )
+          pageInstance.navigate(materialPage.toString)
+        } catch {
+          // A LinkageError here (e.g. NoSuchMethodError on Input.Script.unapply) means
+          // a different, binary-incompatible version of org.scala-js:scalajs-js-envs is
+          // also on the classpath and is winning dependency resolution over the 1.6.0
+          // this library is compiled against. scala.util.control.NonFatal treats
+          // LinkageError as fatal, which makes cats-effect skip Resource finalizers
+          // (browser/playwright/page never get closed). Rewrapping as a plain exception
+          // here, before it reaches the IO runtime, lets the normal Resource release
+          // path run and the JSRun fail with a clear cause instead of leaking the
+          // browser process.
+          case e: LinkageError =>
+            throw new RuntimeException(
+              "Failed to prepare the page for the run. This usually means a different, " +
+                "binary-incompatible version of org.scala-js:scalajs-js-envs is on the " +
+                "classpath alongside the 1.6.0 that scala-js-env-playwright was compiled " +
+                "against (e.g. pulled in transitively by the Scala.js sbt plugin). Check " +
+                "for a version conflict and align both to the same scalajs-js-envs version.",
+              e
+            )
+        }
       }
     } yield ()
 
@@ -62,26 +85,47 @@ object ResourcesFactory {
   ): Resource[IO, Unit] =
     Resource.eval {
       for
-        _ <- IO(scribe.debug(s"Started processUntilStop"))
+        _ <- IO(PWLogger.debug(s"Started processUntilStop"))
         _ <- IO {
           sendAll(sendQueue, pageInstance, intf)
           val jsResponse = fetchMessages(pageInstance, intf)
           streamWriter(jsResponse, outStream, Some(receivedMessage))
         }.andWait(100.milliseconds).iterateUntil(_ => stopSignal.get())
-        _ <- IO(scribe.debug(s"Stop processUntilStop"))
+        _ <- IO(PWLogger.debug(s"Stop processUntilStop"))
       yield ()
     }
 
-  def isConnectionUp(
+  /**
+   * Polls the page every 100 ms until the internal interface is available, the stop signal is
+   * set, or `timeout` expires. Evaluation errors during page load count as "not ready yet".
+   */
+  def awaitConnection(
       pageInstance: Page,
-      intf: String
-  ): Resource[IO, Boolean] =
-    Resource.pure[IO, Boolean] {
-      val status = pageInstance.evaluate(s"!!$intf;").asInstanceOf[Boolean]
-      scribe.debug(
-        s"Page instance is ${pageInstance.hashCode()} with status $status"
+      intf: String,
+      stopSignal: AtomicBoolean,
+      timeout: FiniteDuration = 30.seconds
+  ): Resource[IO, Unit] =
+    Resource.eval {
+      val check: IO[Boolean] =
+        IO.blocking(pageInstance.evaluate(s"!!$intf;").asInstanceOf[Boolean]).handleError { t =>
+          PWLogger.debug(s"Connection check failed, retrying: $t")
+          false
+        }
+
+      def poll: IO[Unit] =
+        check.flatMap { up =>
+          if (up || stopSignal.get()) IO.unit
+          else IO.sleep(100.milliseconds) >> poll
+        }
+
+      poll.timeoutTo(
+        timeout,
+        IO.raiseError(
+          new Exception(
+            s"The page did not expose the Scala.js run interface within $timeout"
+          )
+        )
       )
-      status
     }
 
   def materializer(pwConfig: Config): Resource[IO, FileMaterializer] =
@@ -89,10 +133,10 @@ object ResourcesFactory {
       IO.blocking(FileMaterializer(pwConfig.materialization)) // build
     } { fileMaterializer =>
       IO {
-        scribe.debug("Closing the fileMaterializer")
+        PWLogger.debug("Closing the fileMaterializer")
         fileMaterializer.close()
       }.handleErrorWith { _ =>
-        scribe.error("Error in closing the fileMaterializer")
+        PWLogger.error("Error in closing the fileMaterializer")
         IO.unit
       } // release
     }
@@ -107,10 +151,10 @@ object ResourcesFactory {
       IO.blocking(OutputStreams.prepare(runConfig)) // build
     } { outStream =>
       IO {
-        scribe.debug(s"Closing the stream ${outStream.hashCode()}")
+        PWLogger.debug(s"Closing the stream ${outStream.hashCode()}")
         outStream.close()
       }.handleErrorWith { _ =>
-        scribe.error(s"Error in closing the stream ${outStream.hashCode()})")
+        PWLogger.error(s"Error in closing the stream ${outStream.hashCode()})")
         IO.unit
       } // release
     }
@@ -127,11 +171,11 @@ object ResourcesFactory {
       case Some(f) =>
         val msgs = jsResponse.get("msgs")
         msgs.forEach(consumer(f))
-      case None => scribe.debug("No onMessage function")
+      case None => PWLogger.debug("No onMessage function")
     }
     data.forEach(outStream.out.println)
-    error.forEach(outStream.out.println)
-    consoleError.forEach(outStream.out.println)
+    consoleError.forEach(outStream.err.println)
+    error.forEach(outStream.err.println)
 
     if (!error.isEmpty) {
       val errList = error.toArray(Array[String]()).toList
@@ -147,13 +191,10 @@ object ResourcesFactory {
   ): Unit = {
     val msg = sendQueue.poll()
     if (msg != null) {
-      scribe.debug(s"Sending message")
+      PWLogger.debug(s"Sending message")
       val script = s"$intf.send(arguments[0]);"
       val wrapper = s"function(arg) { $script }"
       pageInstance.evaluate(s"$wrapper", msg)
-      val pwDebug = sys.env.getOrElse("PWDEBUG", "0")
-      if (pwDebug == "1")
-        pageInstance.pause()
       sendAll(sendQueue, pageInstance, intf)
     }
   }

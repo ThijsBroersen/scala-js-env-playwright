@@ -15,9 +15,11 @@ class CERun(
     override val runConfig: RunConfig
 ) extends JSRun
     with Runner {
-  scribe.debug(s"Creating CERun for ${playwrightJsEnv.capabilities.browserName}")
+  PWLogger.debug(s"Creating CERun for ${playwrightJsEnv.capabilities.browserName}")
 
-  lazy val future: Future[Unit] =
+  // Start eagerly: the JSRun contract allows close() before future is ever
+  // awaited, which must still terminate the run and release its resources.
+  val future: Future[Unit] =
     jsRunPrg(isComEnabled = false).use(_ => IO.unit).unsafeToFuture()
 
   override protected def receivedMessage(msg: String): Unit = ()
