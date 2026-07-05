@@ -3,6 +3,32 @@ import sbtrelease.ReleaseStateTransformations.*
 
 scalacOptions ++= Seq("-java-output-version", "21", "-Wunused:all")
 
+ThisBuild / githubWorkflowOSes := Seq("ubuntu-26.04")
+ThisBuild / githubWorkflowJavaVersions := Seq(JavaSpec.temurin("21"))
+ThisBuild / githubWorkflowBuild := Seq(
+  WorkflowStep.Sbt(List("test"), name = Some("Test")),
+  WorkflowStep.Sbt(List("mimaReportBinaryIssues"), name = Some("Check binary compatibility"))
+)
+
+/** Published versions to compare against within each early-semver series (0.y). */
+val mimaPreviousVersionsBySeries = Map(
+  "0.2" -> Seq("0.2.1", "0.2.2", "0.2.3"),
+  "0.3" -> Seq.empty // add "0.3.0" after the first 0.3 release
+)
+
+def baseVersion(v: String): String =
+  v.takeWhile(c => c != '+' && c != '-')
+
+ThisBuild / mimaPreviousArtifacts := {
+  val org = organization.value
+  val mod = moduleName.value
+  val series = baseVersion(version.value).split("\\.").take(2).mkString(".")
+  mimaPreviousVersionsBySeries
+    .getOrElse(series, Seq.empty)
+    .map(v => org %% mod % v)
+    .toSet
+}
+
 organization := "io.github.thijsbroersen"
 organizationName := "ThijsBroersen"
 scalaVersion := "3.8.4"
@@ -61,6 +87,7 @@ lazy val root = (project in file(".")).settings(
     inquireVersions,
     runClean,
     runTest,
+    ReleaseStep(releaseStepTask(mimaReportBinaryIssues)),
     setReleaseVersion,
     commitReleaseVersion,
     tagRelease,
