@@ -5,9 +5,49 @@ scalacOptions ++= Seq("-java-output-version", "21", "-Wunused:all")
 
 ThisBuild / githubWorkflowOSes := Seq("ubuntu-26.04")
 ThisBuild / githubWorkflowJavaVersions := Seq(JavaSpec.temurin("21"))
+ThisBuild / githubWorkflowTargetTags ++= Seq("v*")
+ThisBuild / githubWorkflowPublishTargetBranches := Seq(
+  RefPredicate.StartsWith(Ref.Tag("v")),
+  RefPredicate.Equals(Ref.Branch("main"))
+)
 ThisBuild / githubWorkflowBuild := Seq(
   WorkflowStep.Sbt(List("test"), name = Some("Test")),
   WorkflowStep.Sbt(List("mimaReportBinaryIssues"), name = Some("Check binary compatibility"))
+)
+ThisBuild / githubWorkflowPublishPreamble ++= Seq(
+  WorkflowStep.Run(
+    List("echo $PGP_SECRET | base64 -d -i - | gpg --import"),
+    name = Some("Import signing key"),
+    cond = Some("env.PGP_SECRET != '' && env.PGP_PASSPHRASE == ''"),
+    env = Map(
+      "PGP_SECRET" -> "${{ secrets.PGP_SECRET }}",
+      "PGP_PASSPHRASE" -> "${{ secrets.PGP_PASSPHRASE }}"
+    )
+  ),
+  WorkflowStep.Run(
+    List(
+      """echo "$PGP_SECRET" | base64 -d -i - > /tmp/signing-key.gpg""",
+      """echo "$PGP_PASSPHRASE" | gpg --pinentry-mode loopback --passphrase-fd 0 --import /tmp/signing-key.gpg""",
+      """(echo "$PGP_PASSPHRASE"; echo; echo) | gpg --command-fd 0 --pinentry-mode loopback --change-passphrase $(gpg --list-secret-keys --with-colons 2> /dev/null | grep '^sec:' | cut --delimiter ':' --fields 5 | tail -n 1)"""
+    ),
+    name = Some("Import signing key and strip passphrase"),
+    cond = Some("env.PGP_SECRET != '' && env.PGP_PASSPHRASE != ''"),
+    env = Map(
+      "PGP_SECRET" -> "${{ secrets.PGP_SECRET }}",
+      "PGP_PASSPHRASE" -> "${{ secrets.PGP_PASSPHRASE }}"
+    )
+  )
+)
+ThisBuild / githubWorkflowPublish := Seq(
+  WorkflowStep.Sbt(
+    commands = List("ci-release"),
+    name = Some("Publish"),
+    env = Map(
+      "SONATYPE_USERNAME" -> "${{ secrets.SONATYPE_USERNAME }}",
+      "SONATYPE_PASSWORD" -> "${{ secrets.SONATYPE_PASSWORD }}",
+      "SONATYPE_CREDENTIAL_HOST" -> "${{ secrets.SONATYPE_CREDENTIAL_HOST }}"
+    )
+  )
 )
 
 /** Published versions to compare against within each early-semver series (0.y). */
