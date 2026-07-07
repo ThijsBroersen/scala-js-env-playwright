@@ -14,35 +14,13 @@ ThisBuild / githubWorkflowBuild := Seq(
   WorkflowStep.Sbt(List("test"), name = Some("Test")),
   WorkflowStep.Sbt(List("mimaReportBinaryIssues"), name = Some("Check binary compatibility"))
 )
-ThisBuild / githubWorkflowPublishPreamble ++= Seq(
-  WorkflowStep.Run(
-    List("echo $PGP_SECRET | base64 -d -i - | gpg --import"),
-    name = Some("Import signing key"),
-    cond = Some("env.PGP_SECRET != '' && env.PGP_PASSPHRASE == ''"),
-    env = Map(
-      "PGP_SECRET" -> "${{ secrets.PGP_SECRET }}",
-      "PGP_PASSPHRASE" -> "${{ secrets.PGP_PASSPHRASE }}"
-    )
-  ),
-  WorkflowStep.Run(
-    List(
-      """echo "$PGP_SECRET" | base64 -d -i - > /tmp/signing-key.gpg""",
-      """echo "$PGP_PASSPHRASE" | gpg --pinentry-mode loopback --passphrase-fd 0 --import /tmp/signing-key.gpg""",
-      """(echo "$PGP_PASSPHRASE"; echo; echo) | gpg --command-fd 0 --pinentry-mode loopback --change-passphrase $(gpg --list-secret-keys --with-colons 2> /dev/null | grep '^sec:' | cut --delimiter ':' --fields 5 | tail -n 1)"""
-    ),
-    name = Some("Import signing key and strip passphrase"),
-    cond = Some("env.PGP_SECRET != '' && env.PGP_PASSPHRASE != ''"),
-    env = Map(
-      "PGP_SECRET" -> "${{ secrets.PGP_SECRET }}",
-      "PGP_PASSPHRASE" -> "${{ secrets.PGP_PASSPHRASE }}"
-    )
-  )
-)
 ThisBuild / githubWorkflowPublish := Seq(
   WorkflowStep.Sbt(
     commands = List("ci-release"),
     name = Some("Publish"),
     env = Map(
+      "PGP_SECRET" -> "${{ secrets.PGP_SECRET }}",
+      "PGP_PASSPHRASE" -> "${{ secrets.PGP_PASSPHRASE }}",
       "SONATYPE_USERNAME" -> "${{ secrets.SONATYPE_USERNAME }}",
       "SONATYPE_PASSWORD" -> "${{ secrets.SONATYPE_PASSWORD }}",
       "SONATYPE_CREDENTIAL_HOST" -> "${{ secrets.SONATYPE_CREDENTIAL_HOST }}"
@@ -50,7 +28,9 @@ ThisBuild / githubWorkflowPublish := Seq(
   )
 )
 
-/** Published versions to compare against within each early-semver series (0.y). */
+/**
+ * Published versions to compare against within each early-semver series (0.y).
+ */
 val mimaPreviousVersionsBySeries = Map(
   "0.2" -> Seq("0.2.1", "0.2.2", "0.2.3"),
   "0.3" -> Seq.empty // add "0.3.0" after the first 0.3 release
@@ -63,10 +43,7 @@ ThisBuild / mimaPreviousArtifacts := {
   val org = organization.value
   val mod = moduleName.value
   val series = baseVersion(version.value).split("\\.").take(2).mkString(".")
-  mimaPreviousVersionsBySeries
-    .getOrElse(series, Seq.empty)
-    .map(v => org %% mod % v)
-    .toSet
+  mimaPreviousVersionsBySeries.getOrElse(series, Seq.empty).map(v => org %% mod % v).toSet
 }
 
 organization := "io.github.thijsbroersen"
@@ -114,7 +91,8 @@ lazy val root = (project in file(".")).settings(
   libraryDependencies ++= Seq(
     "com.microsoft.playwright" % "playwright" % "1.61.0",
     ("org.scala-js" %% "scalajs-js-envs" % "1.6.0").cross(CrossVersion.for3Use2_13),
-    ("org.scala-js" %% "scalajs-js-envs-test-kit" % "1.6.0" % Test).cross(CrossVersion.for3Use2_13),
+    ("org.scala-js" %% "scalajs-js-envs-test-kit" % "1.6.0" % Test)
+      .cross(CrossVersion.for3Use2_13),
     "com.google.jimfs" % "jimfs" % "1.3.1",
     "com.outr" %% "scribe" % "3.19.0",
     "org.typelevel" %% "cats-effect" % "3.7.0",
