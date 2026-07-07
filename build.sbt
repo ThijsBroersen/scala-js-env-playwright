@@ -53,6 +53,7 @@ versionScheme := Some("early-semver")
 licenses := Seq(
   "BSD-3-Clause" -> url("https://opensource.org/licenses/BSD-3-Clause")
 )
+homepage := Some(url("https://github.com/thijsbroersen/scala-js-env-playwright"))
 scmInfo := Some(
   ScmInfo(
     url("https://github.com/thijsbroersen/scala-js-env-playwright"),
