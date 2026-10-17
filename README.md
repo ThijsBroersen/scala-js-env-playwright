@@ -10,7 +10,7 @@ TLDR -> `npx playwright install-deps`
 Add the following line to your `project/plugins.sbt` 
 ```scala
 // For Scala.js 1.x
-libraryDependencies += "io.github.thijsbroersen" %% "scala-js-env-playwright" % "0.2.2"
+libraryDependencies += "io.github.thijsbroersen" %% "scala-js-env-playwright" % "0.3.2"
 ```
 Add the following line to your `build.sbt` 
 ```scala
@@ -61,17 +61,17 @@ code as `process.env.<NAME>`, mirroring Node.js.
 ## Compatibility notes
 ### Scala versions
 * This library can be used with any scala version 3.x
-* This project is compiled with scala 3.7.2
+* This project is compiled with Scala 3.10.0
 ### sbt versions
 * This library can be used with sbt 1.x or 2.x
 ### Playwright versions
-* This library can be used with playwright version 1.61.0 `"com.microsoft.playwright" % "playwright" % "1.61.0"`
+* This library is built against Playwright 1.63.0 (`"com.microsoft.playwright" % "playwright" % "1.63.0"`). Other 1.x versions may work if kept aligned with your environment.
 ### JDK versions
 * This library is tested on JDK17
 
 ## Default configuration
 ```scala
-jsEnv := new jsenv.playwright.PlaywrightJSEnv.chrome(
+jsEnv := new io.github.thijsbroersen.jsenv.playwright.PlaywrightJSEnv.chrome(
   headless = true,
   showLogs = false,
 )
@@ -85,7 +85,7 @@ When not passing launchOptions, default launch options are as follows:
 
 ### Chrome/chromium
 ```scala
-jsEnv := new jsenv.playwright.PlaywrightJSEnv.chrome(
+jsEnv := new io.github.thijsbroersen.jsenv.playwright.PlaywrightJSEnv.chrome(
   launchOptions = List(
       "--disable-extensions", 
       "--disable-web-security", 
@@ -99,7 +99,7 @@ jsEnv := new jsenv.playwright.PlaywrightJSEnv.chrome(
 
 ### Firefox
 ```scala
-jsEnv := new jsenv.playwright.PlaywrightJSEnv.firefox(
+jsEnv := new io.github.thijsbroersen.jsenv.playwright.PlaywrightJSEnv.firefox(
   firefoxUserPrefs = Map(
       "security.mixed_content.block_active_content" -> false,
       "security.mixed_content.upgrade_display_content" -> false,
@@ -112,7 +112,7 @@ jsEnv := new jsenv.playwright.PlaywrightJSEnv.firefox(
 WebKit does not accept Chromium-style launch flags (it refuses to start when given any),
 so its default launch options are empty:
 ```scala
-jsEnv := new jsenv.playwright.PlaywrightJSEnv.webkit(
+jsEnv := new io.github.thijsbroersen.jsenv.playwright.PlaywrightJSEnv.webkit(
   launchOptions = Nil
 )
 ```
