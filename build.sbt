@@ -19,15 +19,18 @@ ThisBuild / githubWorkflowBuild := Seq(
   WorkflowStep.Sbt(List("mimaReportBinaryIssues"), name = Some("Check binary compatibility"))
 )
 ThisBuild / githubWorkflowPublish := Seq(
+  WorkflowStep.Sbt(List("show version"), name = Some("Show release version")),
   WorkflowStep.Sbt(
     commands = List("ci-release"),
-    name = Some("Publish"),
+    name = Some("Publish to Maven Central"),
     env = Map(
       "PGP_SECRET" -> "${{ secrets.PGP_SECRET }}",
       "PGP_PASSPHRASE" -> "${{ secrets.PGP_PASSPHRASE }}",
       "SONATYPE_USERNAME" -> "${{ secrets.SONATYPE_USERNAME }}",
       "SONATYPE_PASSWORD" -> "${{ secrets.SONATYPE_PASSWORD }}",
-      "SONATYPE_CREDENTIAL_HOST" -> "${{ secrets.SONATYPE_CREDENTIAL_HOST }}"
+      "SONATYPE_CREDENTIAL_HOST" -> "${{ secrets.SONATYPE_CREDENTIAL_HOST }}",
+      // Signed snapshots on main (sbt-dynver via sbt-ci-release); tags use CI_RELEASE (+publishSigned).
+      "CI_SNAPSHOT_RELEASE" -> "+publishSigned"
     )
   )
 )

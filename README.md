@@ -6,6 +6,21 @@ Playwright needs certain system dependencies [read the docs](https://playwright.
 
 TLDR -> `npx playwright install-deps`
 
+## Snapshot releases (pre-release testing)
+
+Every **push to `main`** runs tests and, when they pass, publishes a **signed** `-SNAPSHOT` to [Maven Central Snapshots](https://central.sonatype.com/repository/maven-snapshots/) (via [sbt-ci-release](https://github.com/sbt/sbt-ci-release) + sbt-dynver). The exact version is logged in the CI job **Show release version** (format `0.3.2+<commits>-<hash>-SNAPSHOT`).
+
+In a consuming Scala.js project, add the snapshots resolver and pin the snapshot version from CI:
+
+```scala
+// project/plugins.sbt or build.sbt (where you declare the jsEnv dependency)
+ThisBuild / resolvers += Resolver.sonatypeCentralSnapshots
+
+libraryDependencies += "io.github.thijsbroersen" %% "scala-js-env-playwright" % "0.3.2+7-xxxxxxxx-SNAPSHOT"
+```
+
+Replace the version string with the one from the latest green **Publish to Maven Central** run on `main`. Stable releases use normal version numbers (for example `0.4.0`) from git tags `v*`.
+
 ## Usage SBT
 Add the following line to your `project/plugins.sbt` 
 ```scala
