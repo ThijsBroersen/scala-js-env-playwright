@@ -3,6 +3,8 @@ import sbtrelease.ReleaseStateTransformations.*
 
 scalacOptions ++= Seq("-java-output-version", "21", "-Wunused:all")
 
+ThisBuild / githubWorkflowScalaVersions := Seq((ThisBuild / scalaVersion).value)
+
 ThisBuild / githubWorkflowOSes := Seq("ubuntu-26.04")
 ThisBuild / githubWorkflowJavaVersions := Seq(JavaSpec.temurin("21"))
 ThisBuild / githubWorkflowTargetTags ++= Seq("v*")
@@ -33,7 +35,7 @@ ThisBuild / githubWorkflowPublish := Seq(
  */
 val mimaPreviousVersionsBySeries = Map(
   "0.2" -> Seq("0.2.1", "0.2.2", "0.2.3"),
-  "0.3" -> Seq.empty // add "0.3.0" after the first 0.3 release
+  "0.3" -> Seq("0.3.2")
 )
 
 def baseVersion(v: String): String =
@@ -48,7 +50,7 @@ ThisBuild / mimaPreviousArtifacts := {
 
 organization := "io.github.thijsbroersen"
 organizationName := "ThijsBroersen"
-scalaVersion := "3.8.4"
+ThisBuild / scalaVersion := "3.10.0"
 versionScheme := Some("early-semver")
 licenses := Seq(
   "BSD-3-Clause" -> url("https://opensource.org/licenses/BSD-3-Clause")
@@ -90,13 +92,13 @@ publishTo := {
 lazy val root = (project in file(".")).settings(
   name := "scala-js-env-playwright",
   libraryDependencies ++= Seq(
-    "com.microsoft.playwright" % "playwright" % "1.61.0",
+    "com.microsoft.playwright" % "playwright" % "1.63.0",
     ("org.scala-js" %% "scalajs-js-envs" % "1.6.0").cross(CrossVersion.for3Use2_13),
     ("org.scala-js" %% "scalajs-js-envs-test-kit" % "1.6.0" % Test)
       .cross(CrossVersion.for3Use2_13),
-    "com.google.jimfs" % "jimfs" % "1.3.1",
+    "com.google.jimfs" % "jimfs" % "1.3.2",
     "com.outr" %% "scribe" % "3.19.0",
-    "org.typelevel" %% "cats-effect" % "3.7.0",
+    "org.typelevel" %% "cats-effect" % "3.7.1",
     "com.novocode" % "junit-interface" % "0.11" % Test
   ),
   javacOptions += "-nowarn",
