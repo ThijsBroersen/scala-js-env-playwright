@@ -101,8 +101,16 @@ object ResourcesFactory {
       pageInstance: Page,
       intf: String,
       stopSignal: AtomicBoolean,
-      timeout: FiniteDuration = 30.seconds,
-      pollInterval: FiniteDuration = 100.milliseconds
+      timeout: FiniteDuration
+  ): Resource[IO, Unit] =
+    awaitConnection(pageInstance, intf, stopSignal, timeout, 100.milliseconds)
+
+  def awaitConnection(
+      pageInstance: Page,
+      intf: String,
+      stopSignal: AtomicBoolean,
+      timeout: FiniteDuration,
+      pollInterval: FiniteDuration
   ): Resource[IO, Unit] =
     Resource.eval {
       val check: IO[Boolean] =
