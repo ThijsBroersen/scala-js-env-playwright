@@ -1,7 +1,5 @@
 package io.github.thijsbroersen.jsenv.playwright
 
-import io.github.thijsbroersen.jsenv.playwright.PageFactory._
-
 import org.scalajs.jsenv.Input
 import org.scalajs.jsenv.RunConfig
 
@@ -32,9 +30,7 @@ trait Runner {
           s"and headless is ${playwrightJsEnv.capabilities.headless} "
       )
     )
-    pageInstance <- createPage(
-      playwrightJsEnv.capabilities
-    )
+    pageInstance <- PageFactory.createPage(playwrightJsEnv)
     _ <- ResourcesFactory.preparePageForJsRun(
       pageInstance,
       ResourcesFactory.materializer(playwrightJsEnv.config),
