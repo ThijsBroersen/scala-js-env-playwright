@@ -18,22 +18,26 @@ ThisBuild / githubWorkflowBuild := Seq(
   WorkflowStep.Sbt(List("test"), name = Some("Test")),
   WorkflowStep.Sbt(List("mimaReportBinaryIssues"), name = Some("Check binary compatibility"))
 )
-ThisBuild / githubWorkflowPublish := Seq(
-  WorkflowStep.Sbt(List("show version"), name = Some("Show release version")),
-  WorkflowStep.Sbt(
-    commands = List("ci-release"),
-    name = Some("Publish to Maven Central"),
-    env = Map(
-      "PGP_SECRET" -> "${{ secrets.PGP_SECRET }}",
-      "PGP_PASSPHRASE" -> "${{ secrets.PGP_PASSPHRASE }}",
-      "SONATYPE_USERNAME" -> "${{ secrets.SONATYPE_USERNAME }}",
-      "SONATYPE_PASSWORD" -> "${{ secrets.SONATYPE_PASSWORD }}",
-      "SONATYPE_CREDENTIAL_HOST" -> "${{ secrets.SONATYPE_CREDENTIAL_HOST }}",
-      // Signed snapshots on main (sbt-dynver via sbt-ci-release); tags use CI_RELEASE (+publishSigned).
-      "CI_SNAPSHOT_RELEASE" -> "+publishSigned"
+// Publish secrets must be in the same sbt invocation as ci-release: an earlier step without
+// secrets can start the sbt server, and the thin client reuses that JVM where PGP_SECRET is null.
+ThisBuild / githubWorkflowPublish := {
+  val publishEnv = Map(
+    "PGP_SECRET" -> "${{ secrets.PGP_SECRET }}",
+    "PGP_PASSPHRASE" -> "${{ secrets.PGP_PASSPHRASE }}",
+    "SONATYPE_USERNAME" -> "${{ secrets.SONATYPE_USERNAME }}",
+    "SONATYPE_PASSWORD" -> "${{ secrets.SONATYPE_PASSWORD }}",
+    "SONATYPE_CREDENTIAL_HOST" -> "${{ secrets.SONATYPE_CREDENTIAL_HOST }}",
+    // Signed snapshots on main (sbt-dynver via sbt-ci-release); tags use CI_RELEASE (+publishSigned).
+    "CI_SNAPSHOT_RELEASE" -> "+publishSigned"
+  )
+  Seq(
+    WorkflowStep.Sbt(
+      commands = List("show version", "ci-release"),
+      name = Some("Publish to Maven Central"),
+      env = publishEnv
     )
   )
-)
+}
 
 /**
  * Published versions to compare against within each early-semver series (0.y).

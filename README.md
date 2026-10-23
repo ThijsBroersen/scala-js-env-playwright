@@ -15,7 +15,7 @@ TLDR -> `npx playwright install-deps`
 
 ## Snapshot releases (pre-release testing)
 
-Every **push to `main`** runs tests and, when they pass, publishes a **signed** `-SNAPSHOT` to [Maven Central Snapshots](https://central.sonatype.com/repository/maven-snapshots/) (via [sbt-ci-release](https://github.com/sbt/sbt-ci-release) + sbt-dynver). The exact version is logged in the CI job **Show release version** (format `0.3.2+<commits>-<hash>-SNAPSHOT`).
+Every **push to `main`** runs tests and, when they pass, publishes a **signed** `-SNAPSHOT` to [Maven Central Snapshots](https://central.sonatype.com/repository/maven-snapshots/) (via [sbt-ci-release](https://github.com/sbt/sbt-ci-release) + sbt-dynver). The exact version is logged at the start of the CI job **Publish to Maven Central** (format `0.3.2+<commits>-<hash>-SNAPSHOT`).
 
 In a consuming Scala.js project, add the snapshots resolver and pin the snapshot version from CI:
 
