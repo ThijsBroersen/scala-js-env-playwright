@@ -68,11 +68,24 @@ case class PlaywrightJSEnv(
         JSComRun.failed(t)
     }
 
+  /**
+   * When [[Config.reuseBrowserBetweenRuns]] is enabled, closes the shared browser and Playwright
+   * driver. No-op when reuse is disabled.
+   */
+  def shutdownSharedBrowser(): Unit = PageFactory.shutdownSharedBrowser(this)
+
 }
 
 object PlaywrightJSEnv {
   case class Config(
-      materialization: Config.Materialization = Config.Materialization.Temp
+      materialization: Config.Materialization = Config.Materialization.Temp,
+      /**
+       * When true, keep the Playwright driver and browser process alive between runs on this env
+       * instance. Each run still gets a fresh browser context. Not safe with parallel test
+       * execution against the same env; call [[PlaywrightJSEnv.shutdownSharedBrowser]] when the
+       * session ends.
+       */
+      reuseBrowserBetweenRuns: Boolean = false
   ) {
     import Config.Materialization
 
@@ -134,6 +147,9 @@ object PlaywrightJSEnv {
 
     def withMaterialization(materialization: Materialization): Config =
       copy(materialization = materialization)
+
+    def withReuseBrowserBetweenRuns(reuseBrowserBetweenRuns: Boolean): Config =
+      copy(reuseBrowserBetweenRuns = reuseBrowserBetweenRuns)
   }
 
   object Config {

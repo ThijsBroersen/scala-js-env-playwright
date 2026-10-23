@@ -49,6 +49,27 @@ class PlaywrightRunTests {
     kit.withRun("process.exit(0);")(_.succeeds())
 
   @Test
+  def sequentialRunsOnSameEnv(): Unit = {
+    val env = PlaywrightJSEnv.chrome()
+    val localKit = new TestKit(env, 30.seconds)
+    localKit.withRun("console.log('first');")(_.expectOut("first\n").closeRun())
+    localKit.withRun("console.log('second');")(_.expectOut("second\n").closeRun())
+  }
+
+  @Test
+  def reuseBrowserBetweenRuns(): Unit = {
+    val env = PlaywrightJSEnv(
+      PlaywrightJSEnv.ChromeOptions(),
+      PlaywrightJSEnv.Config().withReuseBrowserBetweenRuns(true)
+    )
+    try {
+      val localKit = new TestKit(env, 30.seconds)
+      localKit.withRun("console.log('reuse-a');")(_.expectOut("reuse-a\n").closeRun())
+      localKit.withRun("console.log('reuse-b');")(_.expectOut("reuse-b\n").closeRun())
+    } finally env.shutdownSharedBrowser()
+  }
+
+  @Test
   def closeReturnsPromptly(): Unit = {
     // JSRun.close() must be async: request the stop and return, without waiting
     // for the browser to shut down.

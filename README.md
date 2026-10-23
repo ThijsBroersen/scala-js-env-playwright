@@ -117,9 +117,29 @@ jsEnv := new io.github.thijsbroersen.jsenv.playwright.PlaywrightJSEnv.webkit(
 )
 ```
 
-## KeepAlive configuration 
-It is work in progress.
-As a workaround introducing delay in the test cases may help to keep the browser alive. 
+## Browser lifecycle (KeepAlive)
+
+Each `JSRun` normally launches its own Playwright driver and browser and tears them down when the run finishes (`future` completes) or when you call `close()` on the run.
+
+To **reuse the same browser process** across multiple runs on one env instance (faster sbt `Test` sessions), enable reuse on the env config and shut down explicitly when finished:
+
+```scala
+lazy val env = PlaywrightJSEnv(
+  PlaywrightJSEnv.ChromeOptions(),
+  PlaywrightJSEnv.Config().withReuseBrowserBetweenRuns(true)
+)
+
+Test / jsEnv := env
+
+// after your test session (e.g. in test cleanup):
+env.shutdownSharedBrowser()
+```
+
+Notes:
+
+- Reuse keeps the browser **process** alive; each run still gets a **fresh browser context** for isolation.
+- Do **not** combine reuse with `Test / parallelExecution := true` on the same env instance (runs may overlap).
+- `RunConfig` has no keep-alive flag; lifecycle is controlled by the run `future`, `JSRun.close()`, and optionally reuse + `shutdownSharedBrowser()`.
 
 ## Debugging
 debug parameter can be passed to the PlaywrightJSEnv constructor to enable debugging. It will also display the version of the browser which is used.
