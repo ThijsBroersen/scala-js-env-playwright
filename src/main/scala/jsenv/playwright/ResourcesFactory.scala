@@ -3,6 +3,7 @@ package io.github.thijsbroersen.jsenv.playwright
 import io.github.thijsbroersen.jsenv.playwright.PlaywrightJSEnv.Config
 
 import com.microsoft.playwright.Page
+import org.scalajs.jsenv.ExternalJSRun.NonZeroExitException
 import org.scalajs.jsenv.Input
 import org.scalajs.jsenv.RunConfig
 
@@ -67,13 +68,10 @@ object ResourcesFactory {
   private def fetchMessages(
       pageInstance: Page,
       intf: String
-  ): java.util.Map[String, java.util.List[String]] = {
-    val data =
-      pageInstance
-        .evaluate(s"$intf.fetch();")
-        .asInstanceOf[java.util.Map[String, java.util.List[String]]]
-    data
-  }
+  ): java.util.Map[String, AnyRef] =
+    pageInstance
+      .evaluate(s"$intf.fetch();")
+      .asInstanceOf[java.util.Map[String, AnyRef]]
 
   def processUntilStop(
       stopSignal: AtomicBoolean,
@@ -89,7 +87,7 @@ object ResourcesFactory {
         _ <- IO {
           sendAll(sendQueue, pageInstance, intf)
           val jsResponse = fetchMessages(pageInstance, intf)
-          streamWriter(jsResponse, outStream, Some(receivedMessage))
+          streamWriter(jsResponse, outStream, Some(receivedMessage), stopSignal)
         }.andWait(100.milliseconds).iterateUntil(_ => stopSignal.get())
         _ <- IO(PWLogger.debug(s"Stop processUntilStop"))
       yield ()
@@ -160,17 +158,29 @@ object ResourcesFactory {
     }
 
   private def streamWriter(
-      jsResponse: util.Map[String, util.List[String]],
+      jsResponse: util.Map[String, AnyRef],
       outStream: OutputStreams.Streams,
-      onMessage: Option[String => Unit]
+      onMessage: Option[String => Unit],
+      stopSignal: AtomicBoolean
   ): Unit = {
-    val data = jsResponse.get("consoleLog")
-    val consoleError = jsResponse.get("consoleError")
-    val error = jsResponse.get("errors")
+    jsResponse.get("exitCode") match {
+      case code: Number =>
+        stopSignal.set(true)
+        val exit = code.intValue()
+        if (exit != 0)
+          throw new NonZeroExitException(exit)
+      case _ => ()
+    }
+
+    @inline def stringList(key: String): util.List[String] =
+      jsResponse.get(key).asInstanceOf[util.List[String]]
+
+    val data = stringList("consoleLog")
+    val consoleError = stringList("consoleError")
+    val error = stringList("errors")
     onMessage match {
       case Some(f) =>
-        val msgs = jsResponse.get("msgs")
-        msgs.forEach(consumer(f))
+        stringList("msgs").forEach(consumer(f))
       case None => PWLogger.debug("No onMessage function")
     }
     data.forEach(outStream.out.println)

@@ -8,5 +8,7 @@ import org.scalajs.jsenv.test.JSEnvSuiteConfig
  */
 object PlaywrightSuiteConfig {
   def apply(env: PlaywrightJSEnv): JSEnvSuiteConfig =
-    JSEnvSuiteConfig(env).withSupportsCommonJSModules(false)
+    JSEnvSuiteConfig(env)
+      .withSupportsCommonJSModules(false)
+      .withExitJSStatement("process.exit(0);")
 }

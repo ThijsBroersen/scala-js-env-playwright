@@ -45,6 +45,10 @@ class PlaywrightRunTests {
     }
 
   @Test
+  def processExitTerminatesRun(): Unit =
+    kit.withRun("process.exit(0);")(_.succeeds())
+
+  @Test
   def closeReturnsPromptly(): Unit = {
     // JSRun.close() must be async: request the stop and return, without waiting
     // for the browser to shut down.
