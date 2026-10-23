@@ -24,9 +24,6 @@ case class PlaywrightJSEnv(
     config: PlaywrightJSEnv.Config
 ) extends JSEnv {
 
-  private[playwright] val browserSession =
-    new BrowserSession(capabilities, config.reuseBrowserBetweenRuns)
-
   private lazy val validator =
     RunConfig.Validator().supportsInheritIO().supportsOnOutputStream().supportsEnv()
 
@@ -75,7 +72,7 @@ case class PlaywrightJSEnv(
    * When [[Config.reuseBrowserBetweenRuns]] is enabled, closes the shared browser and Playwright
    * driver. No-op when reuse is disabled.
    */
-  def shutdownSharedBrowser(): Unit = browserSession.shutdown()
+  def shutdownSharedBrowser(): Unit = PageFactory.shutdownSharedBrowser(this)
 
 }
 

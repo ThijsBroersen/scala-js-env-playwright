@@ -1,3 +1,5 @@
+import com.typesafe.tools.mima.core.DirectMissingMethodProblem
+import com.typesafe.tools.mima.core.ProblemFilters
 import sbtrelease.ReleasePlugin.autoImport.*
 import sbtrelease.ReleaseStateTransformations.*
 
@@ -91,6 +93,18 @@ publishTo := {
 
 lazy val root = (project in file(".")).settings(
   name := "scala-js-env-playwright",
+  // PlaywrightJSEnv.Config gained `reuseBrowserBetweenRuns` in 0.4.x (early-semver allows API change).
+  mimaBinaryIssueFilters ++= Seq(
+    ProblemFilters.exclude[DirectMissingMethodProblem](
+      "io.github.thijsbroersen.jsenv.playwright.PlaywrightJSEnv#Config.this(io.github.thijsbroersen.jsenv.playwright.PlaywrightJSEnv#Config#Materialization)Unit"
+    ),
+    ProblemFilters.exclude[DirectMissingMethodProblem](
+      "io.github.thijsbroersen.jsenv.playwright.PlaywrightJSEnv#Config.copy(io.github.thijsbroersen.jsenv.playwright.PlaywrightJSEnv#Config#Materialization)io.github.thijsbroersen.jsenv.playwright.PlaywrightJSEnv#Config"
+    ),
+    ProblemFilters.exclude[DirectMissingMethodProblem](
+      "io.github.thijsbroersen.jsenv.playwright.PlaywrightJSEnv#Config.apply(io.github.thijsbroersen.jsenv.playwright.PlaywrightJSEnv#Config#Materialization)io.github.thijsbroersen.jsenv.playwright.PlaywrightJSEnv#Config"
+    )
+  ),
   libraryDependencies ++= Seq(
     "com.microsoft.playwright" % "playwright" % "1.63.0",
     ("org.scala-js" %% "scalajs-js-envs" % "1.6.0").cross(CrossVersion.for3Use2_13),
