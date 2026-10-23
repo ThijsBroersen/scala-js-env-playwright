@@ -1,4 +1,11 @@
-[![Scala CI](https://github.com/thijsbroersen/scala-js-env-playwright/actions/workflows/ci.yml/badge.svg)](https://github.com/thijsbroersen/scala-js-env-playwright/actions/workflows/ci.yml)
+[![CI (main)](https://github.com/ThijsBroersen/scala-js-env-playwright/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/ThijsBroersen/scala-js-env-playwright/actions/workflows/ci.yml?query=branch%3Amain)
+[![CI (latest tag)](https://github.com/ThijsBroersen/scala-js-env-playwright/actions/workflows/ci.yml/badge.svg?branch=v0.3.2)](https://github.com/ThijsBroersen/scala-js-env-playwright/actions/workflows/ci.yml?query=branch%3Av0.3.2)
+[![Latest tag](https://img.shields.io/github/v/tag/ThijsBroersen/scala-js-env-playwright?sort=semver&label=latest%20tag)](https://github.com/ThijsBroersen/scala-js-env-playwright/releases/latest)
+[![Maven Central](https://img.shields.io/maven-central/v/io.github.thijsbroersen/scala-js-env-playwright_3?label=release)](https://central.sonatype.com/artifact/io.github.thijsbroersen/scala-js-env-playwright_3)
+[![Maven Snapshots](https://img.shields.io/badge/Maven%20Snapshots-central--snapshots-blue)](https://central.sonatype.com/repository/maven-snapshots/io/github/thijsbroersen/scala-js-env-playwright_3/)
+
+The **CI (latest tag)** badge tracks the newest release tag (`v0.3.2` today); bump `?branch=v…` in that badge URL when you tag a new release.
+
 # scala-js-env-playwright
 A JavaScript environment for Scala.js (a JSEnv) running playwright. It is only build for Scala 3 (supported by Mill and SBT 2.x)
 ## Requirements
