@@ -1,0 +1,41 @@
+# Optional WebKit validation on macOS (Linux CI skips WebKit by default).
+name: WebKit (macOS)
+
+on:
+  workflow_dispatch:
+  pull_request:
+    branches: [main]
+    paths:
+      - "src/**"
+      - "build.sbt"
+      - "project/**"
+      - ".github/workflows/webkit-macos.yml"
+  schedule:
+    - cron: "0 6 * * 1"
+
+env:
+  PLAYWRIGHT_WEBKIT_TESTS: "1"
+
+jobs:
+  webkit:
+    name: WebKit JSEnv suite
+    runs-on: macos-15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup Java (temurin@21)
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: 21
+          cache: sbt
+
+      - name: Setup sbt
+        uses: sbt/setup-sbt@v1
+
+      - name: Install Playwright system dependencies
+        run: npx --yes playwright install-deps webkit
+
+      - name: Test WebKit suite
+        run: sbt '++ 3.10.0; testOnly io.github.thijsbroersen.jsenv.playwright.PlaywrightJSEnvSuiteWebKit'

@@ -6,6 +6,8 @@ import org.scalajs.jsenv.RunConfig
 import cats.effect.IO
 import cats.effect.Resource
 
+import scala.concurrent.duration.DurationInt
+
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.ConcurrentLinkedQueue
 
@@ -22,7 +24,13 @@ trait Runner {
 
   private[playwright] def jsRunPrg(
       isComEnabled: Boolean = false
-  ): Resource[IO, Unit] = for {
+  ): Resource[IO, Unit] = {
+    val connectionTimeout =
+      if (playwrightJsEnv.capabilities.browserName == "webkit") 60.seconds else 30.seconds
+    val pollInterval =
+      if (playwrightJsEnv.capabilities.browserName == "webkit") 200.milliseconds
+      else 100.milliseconds
+    for {
     _ <- Resource.pure(
       PWLogger.info(
         s"Begin Main with isComEnabled $isComEnabled " +
@@ -38,7 +46,13 @@ trait Runner {
       isComEnabled,
       runConfig.env
     )
-    _ <- ResourcesFactory.awaitConnection(pageInstance, intf, wantToClose)
+    _ <- ResourcesFactory.awaitConnection(
+      pageInstance,
+      intf,
+      wantToClose,
+      connectionTimeout,
+      pollInterval
+    )
     out <- ResourcesFactory.outputStream(runConfig)
     _ <- ResourcesFactory.processUntilStop(
       wantToClose,
@@ -48,7 +62,8 @@ trait Runner {
       out,
       receivedMessage
     )
-  } yield ()
+    } yield ()
+  }
 
   /**
    * Requests the run to stop and release all its resources.

@@ -14,6 +14,18 @@ import scribe.format.FormatterInterpolator
 import java.nio.file.Path
 
 object CEUtils {
+  /**
+   * Playwright resolves its driver bundle via the thread context classloader; sbt test execution
+   * often leaves that unset.
+   */
+  def createPlaywright(): com.microsoft.playwright.Playwright = {
+    val thread = Thread.currentThread
+    val previous = thread.getContextClassLoader
+    thread.setContextClassLoader(getClass.getClassLoader)
+    try com.microsoft.playwright.Playwright.create()
+    finally thread.setContextClassLoader(previous)
+  }
+
   def validateInput(input: Seq[Input]): Unit =
     if (input.exists(!isSupportedInput(_)))
       throw new UnsupportedInputException(input)

@@ -18,7 +18,7 @@ Last reviewed: 2026-10-17 (dependency bump + CI verification).
 |------|--------|
 | **Implement `exitJSStatement` / process exit** | Scala.js `RunTests` / `ComTests` skip exit-related cases (`JSEnv needs exitJSStatement`). Needed for parity with Node/Selenium envs and for clean test shutdown. |
 | **KeepAlive / browser lifecycle** | README marks KeepAlive as WIP; document supported `RunConfig` options and implement predictable teardown (avoid flaky parallel tests). |
-| **WebKit on Linux** | Driver hang on some Linux setups; WebKit suite gated by `PLAYWRIGHT_WEBKIT_TESTS`. Investigate Playwright/WebKit upgrades, timeouts, and optional CI job on macOS. |
+| **WebKit on Linux** | In progress: launch/connection timeouts, TCCL fix for Playwright driver, macOS CI workflow. Linux com-suite failures remain under investigation. |
 
 ## P1 — ecosystem & distribution
 

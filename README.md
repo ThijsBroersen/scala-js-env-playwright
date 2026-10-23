@@ -26,9 +26,7 @@ override def jsEnvConfig = JsEnvConfig.Playwright.chrome(
 ```
 ## Avoid trouble
 * This is a very early version. It may not work for all projects. It is tested on chrome/chromium and firefox.
-* WebKit support exists but its driver process has been observed to hang indefinitely
-  on some Linux setups (e.g. Ubuntu). The WebKit test suite is skipped by default; set
-  `PLAYWRIGHT_WEBKIT_TESTS=1` to run it in an environment known to work (e.g. macOS).
+* **WebKit** is experimental. On Linux, the Playwright driver or com-channel tests often fail or hang; Ubuntu CI therefore skips the WebKit suite. Set `PLAYWRIGHT_WEBKIT_TESTS=1` to run it locally. A **macOS** workflow (`.github/workflows/webkit-macos.yml`) runs the WebKit suite on a schedule and on relevant PRs.
 * It works only with Scala.js 1.x
 * Supported inputs are scripts (`ModuleKind.NoModule`) and ES modules (`ModuleKind.ESModule`).
   CommonJS modules are not supported: browsers have no `require`/`module.exports`.
