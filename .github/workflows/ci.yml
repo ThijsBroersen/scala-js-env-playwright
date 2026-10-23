@@ -98,8 +98,12 @@ jobs:
           tar xf targets.tar
           rm targets.tar
 
-      - name: Publish
+      - name: Show release version
+        run: sbt show version
+
+      - name: Publish to Maven Central
         env:
+          CI_SNAPSHOT_RELEASE: +publishSigned
           SONATYPE_CREDENTIAL_HOST: ${{ secrets.SONATYPE_CREDENTIAL_HOST }}
           SONATYPE_USERNAME: ${{ secrets.SONATYPE_USERNAME }}
           PGP_SECRET: ${{ secrets.PGP_SECRET }}
