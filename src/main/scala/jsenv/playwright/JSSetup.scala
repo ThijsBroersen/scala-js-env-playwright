@@ -43,6 +43,10 @@ private object JSSetup {
        |    ? this.process : {};
        |  proc.env = proc.env || {};
        |  for (var key in envVars) proc.env[key] = envVars[key];
+       |  var exitCode = null;
+       |  proc.exit = function(code) {
+       |    exitCode = (code === undefined || code === null) ? 0 : code;
+       |  };
        |  this.process = proc;
        |
        |  // Buffers for console.log / console.error
@@ -100,8 +104,10 @@ private object JSSetup {
        |        consoleLog: consoleLog.slice(),
        |        consoleError: consoleError.slice(),
        |        errors: errors.slice(),
-       |        msgs: outMessages.slice()
+       |        msgs: outMessages.slice(),
+       |        exitCode: exitCode
        |      }
+       |      exitCode = null;
        |
        |      consoleLog.length = 0;
        |      consoleError.length = 0;

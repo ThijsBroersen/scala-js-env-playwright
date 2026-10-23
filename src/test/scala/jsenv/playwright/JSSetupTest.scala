@@ -38,4 +38,11 @@ class JSSetupTest {
     val code = setupCode(enableCom = false)
     assertTrue(code, code.contains("var envVars = {};"))
   }
+
+  @Test
+  def processExitIsPolyfilled(): Unit = {
+    val code = setupCode(enableCom = false)
+    assertTrue(code, code.contains("proc.exit = function(code)"))
+    assertTrue(code, code.contains("exitCode: exitCode"))
+  }
 }
