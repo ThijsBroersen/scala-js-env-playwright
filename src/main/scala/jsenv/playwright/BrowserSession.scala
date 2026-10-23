@@ -66,13 +66,13 @@ private[playwright] final class BrowserSession(
     else {
       closeQuietly(browser)
       closeQuietly(playwright)
-      playwright = Playwright.create()
+      playwright = CEUtils.createPlaywright()
       browser = launchBrowser(playwright)
     }
   }
 
   private def playwrightResource: Resource[IO, Playwright] =
-    Resource.make(IO.blocking(Playwright.create()))(pw => IO.blocking(closeQuietly(pw)))
+    Resource.make(IO.blocking(CEUtils.createPlaywright()))(pw => IO.blocking(closeQuietly(pw)))
 
   private def browserResource(playwright: Playwright): Resource[IO, Browser] =
     Resource.make(IO.blocking(launchBrowser(playwright)))(b => IO.blocking(closeQuietly(b)))
@@ -93,9 +93,12 @@ private[playwright] final class BrowserSession(
     }
 
   private def launchBrowser(playwright: Playwright): Browser = {
+    val launchTimeoutMs =
+      if (capabilities.browserName == "webkit") 120_000.0 else 60_000.0
     val launchOptions = new com.microsoft.playwright.BrowserType.LaunchOptions()
       .setHeadless(capabilities.headless)
       .setArgs(capabilities.launchOptions.asJava)
+      .setTimeout(launchTimeoutMs)
 
     val browserType = capabilities match {
       case _: PlaywrightJSEnv.ChromeOptions =>

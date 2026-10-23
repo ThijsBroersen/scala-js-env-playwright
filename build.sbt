@@ -103,6 +103,9 @@ lazy val root = (project in file(".")).settings(
     ),
     ProblemFilters.exclude[DirectMissingMethodProblem](
       "io.github.thijsbroersen.jsenv.playwright.PlaywrightJSEnv#Config.apply(io.github.thijsbroersen.jsenv.playwright.PlaywrightJSEnv#Config#Materialization)io.github.thijsbroersen.jsenv.playwright.PlaywrightJSEnv#Config"
+    ),
+    ProblemFilters.exclude[DirectMissingMethodProblem](
+      "io.github.thijsbroersen.jsenv.playwright.ResourcesFactory.awaitConnection$default$4()scala.concurrent.duration.FiniteDuration"
     )
   ),
   libraryDependencies ++= Seq(

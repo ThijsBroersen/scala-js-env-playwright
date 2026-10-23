@@ -101,7 +101,16 @@ object ResourcesFactory {
       pageInstance: Page,
       intf: String,
       stopSignal: AtomicBoolean,
-      timeout: FiniteDuration = 30.seconds
+      timeout: FiniteDuration
+  ): Resource[IO, Unit] =
+    awaitConnection(pageInstance, intf, stopSignal, timeout, 100.milliseconds)
+
+  def awaitConnection(
+      pageInstance: Page,
+      intf: String,
+      stopSignal: AtomicBoolean,
+      timeout: FiniteDuration,
+      pollInterval: FiniteDuration
   ): Resource[IO, Unit] =
     Resource.eval {
       val check: IO[Boolean] =
@@ -113,7 +122,7 @@ object ResourcesFactory {
       def poll: IO[Unit] =
         check.flatMap { up =>
           if (up || stopSignal.get()) IO.unit
-          else IO.sleep(100.milliseconds) >> poll
+          else IO.sleep(pollInterval) >> poll
         }
 
       poll.timeoutTo(
